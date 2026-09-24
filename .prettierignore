@@ -1,0 +1,9 @@
+dist
+node_modules
+package-lock.json
+Handcrafted_macros
+test/golden
+public/r20macro.schema.json
+playwright-report
+test-results
+*.md
