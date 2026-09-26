@@ -21,6 +21,17 @@ import type {
 
 type Path = (string | number)[];
 
+/** Own-property lookup, so names like `toString` never resolve to inherited members. */
+function own<T>(obj: Record<string, T> | undefined, key: string): T | undefined {
+  return obj && Object.hasOwn(obj, key) ? obj[key] : undefined;
+}
+
+/** Most options one `for` loop may generate; guards against freezing on `1..999999999`. */
+export const MAX_LOOP_VALUES = 1000;
+
+/** Private-use characters the expander uses as markers (see r20/parse.ts). */
+const RESERVED = /[\uE000\uE001]/;
+
 export class ExpandError extends Error {
   constructor(
     readonly code: string,
@@ -33,7 +44,7 @@ export class ExpandError extends Error {
 
 /** Resolves `extends` chains and merges parents into children. */
 export function resolveMacro(doc: Document, name: string, seen: string[] = []): Macro {
-  const m = doc.macros[name];
+  const m = own(doc.macros, name);
   if (!m) throw new ExpandError('unknown-macro', `Unknown macro \`${name}\``, ['macros', name]);
   if (!m.extends) return m;
   if (seen.includes(name)) {
@@ -43,7 +54,7 @@ export function resolveMacro(doc: Document, name: string, seen: string[] = []): 
       'extends',
     ]);
   }
-  if (!doc.macros[m.extends]) {
+  if (!own(doc.macros, m.extends)) {
     throw new ExpandError('unknown-macro', `\`extends\` names unknown macro \`${m.extends}\``, [
       'macros',
       name,
@@ -95,13 +106,19 @@ class Expander {
   /** Interpolates `${…}` in a DSL string. `scope` holds loop variables. */
   str(text: Scalar, path: Path, scope: Record<string, Value> = {}): string {
     if (typeof text !== 'string') return String(text);
+    if (RESERVED.test(text)) {
+      throw new ExpandError(
+        'reserved-char',
+        'Text contains a reserved private-use character (U+E000 or U+E001)',
+        path,
+      );
+    }
     const resolve = (id: string): Value | undefined => {
-      if (id in scope) return scope[id];
-      if (this.macro.vars && id in this.macro.vars) return this.macro.vars[id];
-      if (this.doc.vars && id in this.doc.vars) return this.doc.vars[id];
-      const q = this.macro.queries?.[id];
+      const v = own(scope, id) ?? own(this.macro.vars, id) ?? own(this.doc.vars, id);
+      if (v !== undefined) return v;
+      const q = own(this.macro.queries, id);
       if (q !== undefined) return this.query(id, q, scope);
-      const r = this.macro.rolls?.[id];
+      const r = own(this.macro.rolls, id);
       if (r !== undefined) return this.roll(id, r, scope);
       return undefined;
     };
@@ -211,7 +228,7 @@ class Expander {
       const [varName, spec] = entries[0]!;
       for (const v of loopValues(spec, [...path, 'for', varName])) {
         const s = { ...scope, [varName]: v };
-        const ov: OptionPatch = c.overrides?.[String(v)] ?? {};
+        const ov: OptionPatch = own(c.overrides, String(v)) ?? {};
         const base: OptionPatch = {
           label: c.label ?? `\${${varName}}`,
           ...(c.value !== undefined && { value: c.value }),
@@ -286,6 +303,13 @@ function loopValues(spec: string | Scalar[], path: Path): Scalar[] {
   if (!m) throw new ExpandError('choose-for', `Bad range \`${spec}\` (use \`1..9\`)`, path);
   const a = Number(m[1]);
   const z = Number(m[2]);
+  if (Math.abs(z - a) + 1 > MAX_LOOP_VALUES) {
+    throw new ExpandError(
+      'choose-for',
+      `Range \`${spec}\` has ${Math.abs(z - a) + 1} values; the limit is ${MAX_LOOP_VALUES}`,
+      path,
+    );
+  }
   const step = a <= z ? 1 : -1;
   const out: number[] = [];
   for (let i = a; step > 0 ? i <= z : i >= z; i += step) out.push(i);

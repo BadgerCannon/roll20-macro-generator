@@ -161,3 +161,10 @@ describe('round trip: pre-escaped macros pass through unchanged', () => {
     expect(q?.k === 'query' && q.options.length).toBe(2);
   });
 });
+
+describe('malformed markers (review fix)', () => {
+  it('treats an unmatched marker as text instead of looping', () => {
+    expect(render(parse('a \uE000 ?{Q|1}').nodes).text).toBe('a \uE000 ?{Q|1}');
+    expect(render(parse('?{A|x,{{f=\uE000}} y}').nodes).text).toContain('?{A|x,');
+  });
+});

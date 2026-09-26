@@ -248,3 +248,34 @@ macros:
     expect(r.macros[0]!.diagnostics.map((d) => d.code)).toEqual(['unclosed-roll']);
   });
 });
+
+describe('robustness (review fixes)', () => {
+  it('does not resolve inherited object members as names', () => {
+    const r = compile('macros:\n  m:\n    body: ${toString} ${constructor}\n');
+    expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'undefined-ref' });
+    const e = compile('macros:\n  m: { extends: toString }\n');
+    expect(e.macros[0]!.diagnostics[0]).toMatchObject({ code: 'unknown-macro' });
+    const o = compile(`
+macros:
+  m:
+    choose:
+      prompt: P
+      for: { x: [constructor, a] }
+      value: v\${x}
+`);
+    expect(o.macros[0]!.output).toBe('?{P\n|constructor,vconstructor\n|a,va\n}');
+  });
+
+  it('caps for-loop ranges', () => {
+    const r = compile(
+      'macros:\n  m:\n    choose:\n      prompt: P\n      for: { n: 1..999999999 }\n      value: x\n',
+    );
+    expect(r.macros[0]!.output).toBeUndefined();
+    expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'choose-for' });
+  });
+
+  it('rejects the private-use marker characters', () => {
+    const r = compile('macros:\n  m:\n    body: "a \\uE000 b"\n');
+    expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'reserved-char' });
+  });
+});

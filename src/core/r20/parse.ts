@@ -70,7 +70,7 @@ class Parser {
       if (opts.query && braces === 0 && (c === '|' || c === '}')) break;
       if (opts.comma && braces === 0 && c === ',') break;
 
-      if (c === MARK_OPEN) {
+      if (c === MARK_OPEN && s.includes(MARK_CLOSE, this.pos)) {
         const end = s.indexOf(MARK_CLOSE, this.pos);
         const body = s.slice(this.pos + 1, end);
         const start = this.pos;
@@ -143,7 +143,8 @@ class Parser {
     for (let i = pos; i < s.length; i++) {
       const c = s[i];
       if (c === MARK_OPEN) {
-        i = s.indexOf(MARK_CLOSE, i);
+        const end = s.indexOf(MARK_CLOSE, i);
+        if (end >= 0) i = end;
         continue;
       }
       if ((c === '?' || c === '@' || c === '%') && s[i + 1] === '{') {
