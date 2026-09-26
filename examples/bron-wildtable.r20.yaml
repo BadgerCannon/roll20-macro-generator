@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../public/r20macro.schema.json
+# Reproduces Handcrafted_macros/Bron_wildtable.roll: a roll query inside a template field.
+vars:
+  char: Bron Ironhoof
+
+macros:
+  wild-surge:
+    description: Path of Wild Magic surge table, pick the rolled result
+    template: 5eDefault
+    fields:
+      title: Wild Surge Table
+      subheader: '@{${char}|character_name} '
+      subheaderright: Path of Wild Magic feature
+      freetext:
+        choose:
+          prompt: 'Rolled '
+          options:
+            - label: 1
+              value: |-
+                **Rolled: 1**
+                Shadowy tendrils lash out from Bron. Each creature Bron's choice within 30 feet of him must succeed on a DC [[@{${char}|DC}]] Constitution saving throw or take [[1d12]] necrotic damage. Bron also gains [[1d12]] temporary hit points.
+            - label: 2
+              value: |-
+                **Rolled: 2**
+                Bron teleports up to 30 feet to an unoccupied space he can see. Until his rage ends, Bron can use this effect again on each of his turns as a bonus action.
+            - label: 3
+              value: |-
+                **Rolled: 3**
+                An intangible spirit, which looks like a flumph or a pixie (Bron's choice), appears within 5 feet of one creature of his choice that Bron can see within 30 feet of Bron. At the end of the current turn, the spirit explodes, and each creature within 5 feet of it must succeed on a DC [[@{${char}|DC}]] Dexterity saving throw or take [[1d6]] force damage.
+                Until Bron's rage ends he can use this effect again as a bonus action, summoning another spirit.
+            - label: 4
+              value: |-
+                **Rolled: 4**
+                Magic infuses one weapon Bron is holding. Until his rage ends, the weapon's damage type changes to force, and it gains the light and thrown properties, with a normal range of 20 feet and a long range of 60 feet. If the weapon leaves Bron's hand, the weapon reappears in his hand at the end of the current turn.
+            - label: 5
+              value: |-
+                **Rolled: 5**
+                Whenever a creature hits Bron with an attack roll while he's raging, that creature takes [[1d6]] force damage, as magic lashes out in retribution.
+            - label: 6
+              value: |-
+                **Rolled: 6**
+                Until Bron's rage ends, he is surrounded by multi-coloured, protective lights; Bron gains a +1 bonus to AC, and his allies gain the same bonus while within 10 feet of him.
+            - label: 7
+              value: |-
+                **Rolled: 7**
+                Waves of pressure cascade out from Bron, waylaying the movements of his enemies. Until his rage ends, the area within 15 feet of Bron is difficult terrain for hostile creatures.
+            - label: 8
+              value: |-
+                **Rolled: 8**
+                A bolt of light shoots from Bron's chest at a creature within 30 feet him. It must succeed on a DC [[@{${char}|DC}]] Constitution saving throw or take [[1d6]] radiant damage and be blinded until the start of Bron's next turn. Bron can use this effect again on each turn as a bonus action until his rage ends.

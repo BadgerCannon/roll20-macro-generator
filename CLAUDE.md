@@ -16,4 +16,6 @@ queries, chat buttons and `$[[n]]` reuse, and lints macros for common mistakes.
 npm test            # vitest
 npm run typecheck
 npm run lint        # eslint + prettier --check
+npm run gen:schema  # regenerate public/r20macro.schema.json (CI checks it is fresh)
+npm run r20m -- build examples/basics.r20.yaml
 ```

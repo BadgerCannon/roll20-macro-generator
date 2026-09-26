@@ -323,7 +323,8 @@ export function defer(s: string): string {
     .replace(/%\{/g, '&#37;{')
     .replace(/\?\{/g, '&#63;{')
     .replace(/\[\[/g, '&#91;[')
-    .replace(/\]\]/g, ']&#93;');
+    .replace(/\]\]/g, ']&#93;')
+    .replace(/:/g, '&#58;');
 }
 
 function quoteName(n: string): string {
@@ -345,10 +346,12 @@ export function chatPrefix(chat: Chat | undefined): string {
 export interface Expanded {
   text: string;
   diagnostics: Diagnostic[];
+  /** The macro with its `extends` chain merged in. */
+  macro: Macro;
 }
 
 export function expandMacro(doc: Document, name: string): Expanded {
   const macro = resolveMacro(doc, name);
   const ex = new Expander(doc, macro, name);
-  return { text: ex.macroText(), diagnostics: ex.diagnostics };
+  return { text: ex.macroText(), diagnostics: ex.diagnostics, macro };
 }

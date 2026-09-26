@@ -1,0 +1,5 @@
+macros:
+  good:
+    body: /r 1d20
+  broken:
+    body: '?{Level|1|2'

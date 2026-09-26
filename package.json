@@ -12,7 +12,9 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "gen:schema": "tsx scripts/gen-schema.ts",
-    "check:schema": "tsx scripts/gen-schema.ts --check"
+    "check:schema": "tsx scripts/gen-schema.ts --check",
+    "build:cli": "tsup",
+    "r20m": "tsx src/cli/index.ts"
   },
   "engines": {
     "node": ">=22.12"
@@ -44,5 +46,8 @@
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.1",
     "vitest": "^5.0.1"
+  },
+  "bin": {
+    "r20m": "dist/cli/index.js"
   }
 }
