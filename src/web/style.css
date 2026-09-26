@@ -1,0 +1,349 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-2: #f0eee9;
+  --text: #1f1d1a;
+  --muted: #6b665e;
+  --border: #dcd8cf;
+  --accent: #7a2e8e;
+  --accent-text: #ffffff;
+  --error: #b3261e;
+  --warning: #9a6700;
+  --info: #3b5ba5;
+  --radius: 8px;
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #17161a;
+    --surface: #211f25;
+    --surface-2: #2a2830;
+    --text: #ebe8f0;
+    --muted: #a49fad;
+    --border: #3a3742;
+    --accent: #c58ee0;
+    --accent-text: #1a1320;
+    --error: #ff8a80;
+    --warning: #f2c14e;
+    --info: #9bb6ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    15px/1.45 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+h1,
+h2 {
+  margin: 0;
+  font-weight: 600;
+}
+h1 {
+  font-size: 1.1rem;
+}
+h2 {
+  font-size: 0.95rem;
+}
+.muted {
+  color: var(--muted);
+  font-weight: 400;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+button,
+.button,
+select {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+button:hover,
+.button:hover,
+select:hover {
+  border-color: var(--accent);
+}
+button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.help {
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.panes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.pane-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+#editor {
+  flex: 1;
+  min-height: 0;
+}
+#editor .cm-editor {
+  height: 100%;
+  font-size: 13px;
+}
+#editor .cm-scroller {
+  font-family: var(--mono);
+}
+.output-pane {
+  overflow: auto;
+}
+#output,
+#doc-diagnostics {
+  padding: 0 0.9rem;
+}
+#output {
+  padding-bottom: 0.9rem;
+}
+
+.card {
+  margin-top: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+.card-title {
+  min-width: 0;
+}
+.card-title h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-family: var(--mono);
+}
+.card-title p {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.card pre {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  max-height: 22rem;
+  overflow: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font: 12.5px/1.5 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.card.failed pre {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.diags {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.75rem 0.5rem;
+  font-size: 0.85rem;
+}
+.diags li {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+}
+.diags .sev {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding-top: 0.1rem;
+}
+.diags .error .sev {
+  color: var(--error);
+}
+.diags .warning .sev {
+  color: var(--warning);
+}
+.diags .info .sev {
+  color: var(--info);
+}
+.diags button.loc {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  text-decoration: underline dotted;
+}
+#doc-diagnostics .diags {
+  margin-top: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+}
+.empty {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(24rem, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.18);
+  z-index: 10;
+}
+.drawer[hidden] {
+  display: none;
+}
+.drawer-head,
+.drawer-foot {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-foot {
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  justify-content: flex-start;
+  margin-top: auto;
+}
+#history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+#history-list li {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+#history-list .title {
+  font-weight: 600;
+  word-break: break-word;
+}
+#history-list time {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+#history-list .row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+#history-list button {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.55rem;
+}
+#history-empty,
+.warn {
+  padding: 0 1rem;
+}
+.warn {
+  color: var(--warning);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  body {
+    height: auto;
+  }
+  .panes {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem 16px;
+  }
+  .editor-pane {
+    height: 60vh;
+  }
+  .bar {
+    padding: 0.6rem 16px;
+  }
+}
