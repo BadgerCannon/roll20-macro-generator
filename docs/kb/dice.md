@@ -35,6 +35,13 @@ evaluation order, innermost first and then left to right:
 ```
 
 Here 1d20 is `$[[0]]`, 1d6 is `$[[1]]`, 6 is `$[[2]]` and the outer sum is `$[[3]]`.
+**Numbering rule used by the generator: deepest nesting level first, across the whole
+message, then left to right.** Both readings agree on the wiki example above. The rmacro
+sample settles the difference: in
+`/em hits … [[?{Level cast at|…}+2]] magic missiles. Total damage is: [[[[1d4+1]]*?{Level cast at}]] Each missile does $[[0]] force damage.`
+`$[[0]]` is the nested `1d4+1`, not the first top-level roll. Each line of a macro is a
+separate message with its own numbering.
+
 `$[[n]]` is display-only; it cannot be used inside another inline roll's math. If a
 preceding query option contains inline rolls, the index depends on the chosen option,
 so reuse after such a query is unstable.
