@@ -6,6 +6,8 @@
 const KEY_DRAFT = 'r20m:v1:draft';
 const KEY_HISTORY = 'r20m:v1:history';
 export const HISTORY_LIMIT = 50;
+/** Largest timestamp a JavaScript `Date` accepts (±100,000,000 days from 1970). */
+const MAX_DATE_MS = 8.64e15;
 
 export interface HistoryEntry {
   id: string;
@@ -47,7 +49,10 @@ function isEntry(x: unknown): x is HistoryEntry {
     typeof e.id === 'string' &&
     typeof e.title === 'string' &&
     typeof e.source === 'string' &&
-    typeof e.savedAt === 'number'
+    typeof e.savedAt === 'number' &&
+    // Must be a time `Date` can represent, or rendering the history list throws.
+    Number.isFinite(e.savedAt) &&
+    Math.abs(e.savedAt) <= MAX_DATE_MS
   );
 }
 
@@ -97,7 +102,12 @@ export function importHistory(json: string): number {
   const incoming = Array.isArray(data.entries) ? data.entries.filter(isEntry) : [];
   const current = listHistory();
   const ids = new Set(current.map((e) => e.id));
-  const added = incoming.filter((e) => !ids.has(e.id));
+  const added: HistoryEntry[] = [];
+  for (const e of incoming) {
+    if (ids.has(e.id)) continue; // also drops repeats within the imported file
+    ids.add(e.id);
+    added.push(e);
+  }
   if (!store([...current, ...added])) throw new Error('Browser storage is not available');
   return added.length;
 }
