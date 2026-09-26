@@ -16,7 +16,11 @@ when clicked, so its contents are **not** expanded or escaped when the menu is p
 
 ## API command buttons
 
-Anyone can use these; no Pro account or API is needed.
+Clicking a button needs no Pro account. What the button does depends on its target:
+
+- `!&#13;#macro` and `!&#13;&#37;{…}` run a macro or ability, so they work in any game.
+- A plain API command such as `!attackroll` only does something if a Mod (API) script that
+  handles that command is installed in the game, which needs a Pro-subscriber game.
 
 ```
 [Attack Roll](!attackroll)
