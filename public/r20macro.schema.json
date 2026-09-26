@@ -1,0 +1,633 @@
+{
+  "$id": "https://badgercannon.github.io/roll20-macro-generator/r20macro.schema.json",
+  "title": "Roll20 macro generator DSL",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "vars": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      },
+      "description": "Named values usable as `${name}` in any string. Macro vars override file vars."
+    },
+    "macros": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "extends": {
+            "description": "Name of a macro to inherit from.",
+            "type": "string"
+          },
+          "target": {
+            "description": "Where the macro is stored. Collections macros lose HTML entities when reopened (kb: html-entities.md).",
+            "type": "string",
+            "enum": [
+              "collection",
+              "ability"
+            ]
+          },
+          "vars": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            },
+            "description": "Named values usable as `${name}` in any string. Macro vars override file vars."
+          },
+          "queries": {
+            "description": "Named roll queries, used as `${name}`.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "Free-text query: the prompt."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "prompt": {
+                      "type": "string"
+                    },
+                    "default": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "options": {
+                      "description": "List of values, `{label, value}` items, or a `label: value` map.",
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  },
+                                  "value": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "prompt"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "rolls": {
+            "description": "Named inline rolls. First `${name}` rolls `[[…]]`; later uses show `$[[n]]`.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "chat": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "roll",
+                  "emote",
+                  "gmroll",
+                  "desc",
+                  "ooc"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "whisper": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "whisper"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "as": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "as"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "emas": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "emas"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "api": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "api"
+                ],
+                "additionalProperties": false
+              }
+            ],
+            "description": "Chat command prefix (kb: chat-commands.md), e.g. `emote` or `{ whisper: gm }`."
+          },
+          "template": {
+            "description": "Roll template name, e.g. `default`, `5eDefault`.",
+            "type": "string"
+          },
+          "noerror": {
+            "description": "Add `&{noerror}` to suppress missing-attribute errors.",
+            "type": "boolean"
+          },
+          "fields": {
+            "$ref": "#/$defs/Fields"
+          },
+          "text": {
+            "description": "Text after the fields (natural Roll20 syntax).",
+            "type": "string"
+          },
+          "choose": {
+            "$ref": "#/$defs/Choose"
+          },
+          "body": {
+            "description": "Free-form macro text in natural Roll20 syntax, placed last.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Macros by name."
+    }
+  },
+  "required": [
+    "macros"
+  ],
+  "additionalProperties": false,
+  "description": "Roll20 macro generator DSL (https://github.com/BadgerCannon/roll20-macro-generator).",
+  "$defs": {
+    "Fields": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/FieldValue"
+      },
+      "description": "Roll template fields in order, rendered as `{{key=value}}`. `null` removes an inherited field.",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "`default` template: title bar text."
+        },
+        "title": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: card title."
+        },
+        "subheader": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: line under the title (often the character name)."
+        },
+        "subheader2": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: second subheader line."
+        },
+        "subheaderright": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: right-aligned subheader (e.g. \"Evocation Level 3\")."
+        },
+        "character_name": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: character name."
+        },
+        "freetext": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: free text block."
+        },
+        "freetextname": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: heading for the free text block."
+        },
+        "weapon": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 for a weapon/attack card."
+        },
+        "simple": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 for the simple attack layout."
+        },
+        "rollname": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: label for the attack roll."
+        },
+        "roll1": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: first attack roll."
+        },
+        "roll2": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: second attack roll (advantage/disadvantage)."
+        },
+        "showadvroll": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 to show roll2."
+        },
+        "weapondamage": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: damage roll."
+        },
+        "weaponcritdamage": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: extra critical damage."
+        },
+        "spell": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 for a spell card."
+        },
+        "spellshowinfoblock": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 to show the spell info block."
+        },
+        "spellshowdesc": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 to show the description."
+        },
+        "spellshowhealing": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: set to 1 to show healing."
+        },
+        "spellcasttime": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: casting time."
+        },
+        "spellduration": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: duration."
+        },
+        "spelltarget": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: target."
+        },
+        "spellrange": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: range."
+        },
+        "spellgainedfrom": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: class the spell comes from."
+        },
+        "spellcomponents": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: components (V, S, M)."
+        },
+        "spelldescription": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: spell description."
+        },
+        "spellhealing": {
+          "$ref": "#/$defs/FieldValue",
+          "description": "5eDefault: healing roll."
+        }
+      }
+    },
+    "FieldValue": {
+      "anyOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "choose": {
+              "$ref": "#/$defs/Choose"
+            }
+          },
+          "required": [
+            "choose"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "button": {
+              "$ref": "#/$defs/Button"
+            }
+          },
+          "required": [
+            "button"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "buttons": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Button"
+              }
+            }
+          },
+          "required": [
+            "buttons"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Choose": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "Question shown to the player."
+        },
+        "options": {
+          "description": "Explicit options, listed before generated ones.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Option"
+          }
+        },
+        "for": {
+          "description": "Generate one option per value: `{ level: 1..9 }` or `{ die: [d4, d6] }`.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?\\d+\\s*\\.\\.\\s*-?\\d+$",
+                "description": "Inclusive integer range, e.g. `1..9`."
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "label": {
+          "description": "Label of generated options (default: the loop value).",
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "value": {
+          "description": "Value of generated options.",
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "fields": {
+          "$ref": "#/$defs/Fields"
+        },
+        "text": {
+          "description": "Text of generated options.",
+          "type": "string"
+        },
+        "overrides": {
+          "description": "Per-value changes for generated options, keyed by loop value.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/OptionPatch"
+          }
+        },
+        "layout": {
+          "description": "`pretty` puts each option on its own line (default).",
+          "type": "string",
+          "enum": [
+            "pretty",
+            "compact"
+          ]
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "additionalProperties": false,
+      "description": "Drop-down roll query whose options inject template fields or text (kb: queries.md)."
+    },
+    "Option": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "separator": {
+              "anyOf": [
+                {
+                  "type": "boolean",
+                  "const": true
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "separator"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "label": {
+              "description": "Text shown in the drop-down.",
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "value": {
+              "description": "Value inserted when chosen (instead of fields/text).",
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            },
+            "fields": {
+              "$ref": "#/$defs/Fields"
+            },
+            "text": {
+              "description": "Text inserted after the fields when chosen.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "label"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "OptionPatch": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "Text shown in the drop-down.",
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "value": {
+          "description": "Value inserted when chosen (instead of fields/text).",
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "fields": {
+          "$ref": "#/$defs/Fields"
+        },
+        "text": {
+          "description": "Text inserted after the fields when chosen.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Button": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Button text."
+        },
+        "ability": {
+          "description": "Ability to call: `name`, `selected|name` or `Character|name` → `[L](~…)`.",
+          "type": "string"
+        },
+        "macro": {
+          "description": "Collections macro to run → `[L](!&#13;#name)`.",
+          "type": "string"
+        },
+        "api": {
+          "description": "API command (without `!`). Calls, queries and rolls run when clicked.",
+          "type": "string"
+        },
+        "send": {
+          "description": "Chat text sent when clicked. Calls, queries and rolls run when clicked.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false,
+      "description": "Chat button (kb: buttons.md). Set exactly one of ability, macro, api, send."
+    }
+  }
+}

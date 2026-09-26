@@ -12,6 +12,8 @@ export const MARK_OPEN = '';
 export const MARK_CLOSE = '';
 export const rollDefMarker = (name: string) => `${MARK_OPEN}D:${name}${MARK_CLOSE}`;
 export const rollReuseMarker = (name: string) => `${MARK_OPEN}R:${name}${MARK_CLOSE}`;
+/** Text the parser must not interpret (button targets). It is still escaped when nested. */
+export const literalMarker = (text: string) => `${MARK_OPEN}T:${text}${MARK_CLOSE}`;
 
 export interface ParseProblem {
   code: string;
@@ -75,6 +77,8 @@ class Parser {
         this.pos = end + 1;
         if (body.startsWith('D:')) {
           this.pendingRollName = body.slice(2);
+        } else if (body.startsWith('T:')) {
+          text += body.slice(2);
         } else {
           flush();
           nodes.push({ k: 'reuse', name: body.slice(2), start });
@@ -138,6 +142,10 @@ class Parser {
     let depth = 0;
     for (let i = pos; i < s.length; i++) {
       const c = s[i];
+      if (c === MARK_OPEN) {
+        i = s.indexOf(MARK_CLOSE, i);
+        continue;
+      }
       if ((c === '?' || c === '@' || c === '%') && s[i + 1] === '{') {
         const j = this.findClose(i + 1, false);
         if (j < 0) return -1;

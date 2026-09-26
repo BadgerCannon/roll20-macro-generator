@@ -10,7 +10,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "gen:schema": "tsx scripts/gen-schema.ts",
+    "check:schema": "tsx scripts/gen-schema.ts --check"
   },
   "engines": {
     "node": ">=22.12"
