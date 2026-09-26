@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../public/r20macro.schema.json
+# Everyday macros that show the main DSL features.
+macros:
+  initiative:
+    description: Roll initiative for the selected token and add it to the Turn Tracker
+    template: default
+    fields:
+      name: '@{selected|token_name} Initiative'
+      Roll: '[[1d20 + @{selected|initiative_bonus} &{tracker}]]'
+
+  magic-missile:
+    description: Named query reused, named roll shown again with $[[n]]
+    chat: emote
+    queries:
+      level: { prompt: Level cast at, options: [1, 2, 3, 4, 5, 6, 7, 8, 9] }
+    rolls:
+      dart: 1d4+1
+    body: >-
+      hits their targets with [[${level}+2]] magic missiles. Total damage is
+      [[${dart} * (${level}+2)]]. Each missile does ${dart} force damage.
+
+  attack:
+    description: Advantage query nested inside a weapon query; escaping is automatic
+    queries:
+      roll: { prompt: Roll, options: { Normal: 1d20, Advantage: 2d20kh1, Disadvantage: 2d20kl1 } }
+      bonus: { prompt: Bonus, default: 0 }
+    template: default
+    fields:
+      name: Attack
+    choose:
+      prompt: Weapon
+      options:
+        - label: Longsword
+          fields:
+            Hit: '[[${roll} + @{selected|strength_mod} + ${bonus}]]'
+            Damage: '[[1d8 + @{selected|strength_mod}]]'
+        - label: Shortbow
+          fields:
+            Hit: '[[${roll} + @{selected|dexterity_mod} + ${bonus}]]'
+            Damage: '[[1d6 + @{selected|dexterity_mod}]]'
+
+  gm-menu:
+    description: Chat menu of buttons, whispered to the GM
+    chat: { whisper: gm }
+    template: default
+    fields:
+      name: 'Menu: @{selected|character_name}'
+      Rolls:
+        buttons:
+          - { label: Initiative, ability: selected|INITIATIVE }
+          - { label: Perception, ability: selected|perception }
+      Tokens:
+        buttons:
+          - { label: Damage, api: 'token-mod --set bar1|-?{Damage|0}' }
+          - {
+              label: Show HP,
+              send: '/w gm @{selected|token_name}: @{selected|bar1}/@{selected|bar1|max} HP',
+            }

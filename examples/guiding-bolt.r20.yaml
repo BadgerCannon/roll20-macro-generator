@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../public/r20macro.schema.json
+# Reproduces Handcrafted_macros/Guiding bolt at level template.roll, with its copy-paste bugs fixed:
+# option 1 was labelled "2", options 4/5 showed the wrong level, level 9 rolled 8+3 dice.
+vars:
+  char: Alveriel
+
+macros:
+  guiding-bolt:
+    description: Guiding Bolt attack, cast at a chosen level
+    template: 5eDefault
+    fields:
+      character_name: ${char}
+      subheader: ${char}
+      weapon: 1
+      simple: 1
+      rollname: Attack
+      title: Guiding Bolt
+    choose:
+      prompt: Attack type
+      for: { level: 1..9 }
+      fields:
+        subheaderright: 'Evocation Level ${level} '
+        roll1: ' [[1d20cs>20 + @{wis_attack_roll_bonus}]] '
+        roll2: ' [[1d20cs>20 + @{wis_attack_roll_bonus}]] '
+        showadvroll: 1
+        weapondamage: '[[ [[${level}+3]]d6 + @{wis_attack_dmg_bonus} ]] Radiant damage'
+        weaponcritdamage: plus [[ [[${level}+3]]d6 ]] damage
+      overrides:
+        9: { fields: { subheaderright: 'Evocation Level fuck you in particular ' } }

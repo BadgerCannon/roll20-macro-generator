@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '../../src/core';
+import { compile, type Diagnostic } from '../../src/core';
 
 const one = (src: string) => {
   const r = compile(src);
@@ -7,9 +7,10 @@ const one = (src: string) => {
   expect(r.macros).toHaveLength(1);
   return r.macros[0]!;
 };
+const notInfo = (ds: Diagnostic[]) => ds.filter((d) => d.severity !== 'info');
 const out = (src: string) => {
   const m = one(src);
-  expect(m.diagnostics).toEqual([]);
+  expect(notInfo(m.diagnostics)).toEqual([]);
   return m.output;
 };
 
@@ -97,7 +98,7 @@ macros:
     extends: base
     fields: { title: Child, subheader: null }
 `);
-    expect(r.macros.flatMap((m) => m.diagnostics)).toEqual([]);
+    expect(notInfo(r.macros.flatMap((m) => m.diagnostics))).toEqual([]);
     expect(r.macros[1]!.output).toBe(
       '&{template:5eDefault} {{title=Child}} {{weapon=1}} ?{Level\n' +
         '|1,{{subheaderright=Level 1&#125;&#125; {{weapondamage=[[ [[1+3]]d6 ]]&#125;&#125;\n' +
@@ -165,10 +166,10 @@ macros:
         buttons:
           - { label: Init, ability: selected|INITIATIVE }
           - { label: HP, macro: NPC-HP }
-          - { label: Hit, api: 'attack @{target|token_id} [[1d6+?{Bonus|0}]]' }
+          - { label: Hit, api: 'attack @{target|token_id} [[1d6+?{Bonus|0}]] a:b' }
 `),
     ).toBe(
-      '&{template:default} {{name=Menu}} {{Actions=[Init](~selected|INITIATIVE) [HP](!&#13;#NPC-HP) [Hit](!attack &#64;{target|token_id} &#91;[1d6+&#63;{Bonus|0}]&#93;)}}',
+      '&{template:default} {{name=Menu}} {{Actions=[Init](~selected|INITIATIVE) [HP](!&#13;#NPC-HP) [Hit](!attack &#64;{target|token_id} &#91;[1d6+&#63;{Bonus|0}]&#93; a&#58;b)}}',
     );
   });
 

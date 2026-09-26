@@ -1,0 +1,17 @@
+&{template:5eDefault} {{title=Wild Surge Table}} {{subheader=@{Bron Ironhoof|character_name} }} {{subheaderright=Path of Wild Magic feature}} {{freetext=?{Rolled |1,**Rolled: 1**
+Shadowy tendrils lash out from Bron. Each creature Bron's choice within 30 feet of him must succeed on a DC [[@{Bron Ironhoof|DC}]] Constitution saving throw or take [[1d12]] necrotic damage. Bron also gains [[1d12]] temporary hit points.
+|2, **Rolled: 2**
+Bron teleports up to 30 feet to an unoccupied space he can see. Until his rage ends&#44; Bron can use this effect again on each of his turns as a bonus action.
+|3, **Rolled: 3**
+An intangible spirit&#44; which looks like a flumph or a pixie (Bron's choice)&#44; appears within 5 feet of one creature of his choice that Bron can see within 30 feet of Bron. At the end of the current turn&#44; the spirit explodes&#44; and each creature within 5 feet of it must succeed on a DC [[@{Bron Ironhoof|DC}]] Dexterity saving throw or take [[1d6]] force damage.
+Until Bron's rage ends he can use this effect again as a bonus action&#44; summoning another spirit.
+|4, **Rolled: 4**
+Magic infuses one weapon Bron is holding. Until his rage ends&#44; the weapon's damage type changes to force&#44; and it gains the light and thrown properties&#44; with a normal range of 20 feet and a long range of 60 feet. If the weapon leaves Bron's hand&#44; the weapon reappears in his hand at the end of the current turn.
+|5, **Rolled: 5**
+Whenever a creature hits Bron with an attack roll while he's raging&#44; that creature takes [[1d6]] force damage&#44; as magic lashes out in retribution.
+|6, **Rolled: 6**
+Until Bron's rage ends&#44; he is surrounded by multi-coloured&#44; protective lights; Bron gains a +1 bonus to AC&#44; and his allies gain the same bonus while within 10 feet of him.
+|7, **Rolled: 7**
+Waves of pressure cascade out from Bron&#44; waylaying the movements of his enemies. Until his rage ends&#44; the area within 15 feet of Bron is difficult terrain for hostile creatures.
+|8, **Rolled: 8**
+A bolt of light shoots from Bron's chest at a creature within 30 feet him. It must succeed on a DC [[@{Bron Ironhoof|DC}]] Constitution saving throw or take [[1d6]] radiant damage and be blinded until the start of Bron's next turn. Bron can use this effect again on each turn as a bonus action until his rage ends.} }}

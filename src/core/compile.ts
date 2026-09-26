@@ -1,5 +1,6 @@
 import type { Diagnostic } from './diagnostics';
 import { ExpandError, expandMacro } from './expand';
+import { lintMacro, lintYaml } from './lint';
 import { load } from './load';
 import { parse } from './r20/parse';
 import { render } from './r20/render';
@@ -40,6 +41,12 @@ export function compile(source: string): CompileResult {
         ...rendered.problems.map((p) =>
           at({ severity: p.severity, code: p.code, message: p.message }),
         ),
+        ...lintMacro({
+          macro: doc.macros[name]!,
+          expanded: expanded.text,
+          nodes: parsed.nodes,
+          output: rendered.text,
+        }).map(at),
       ];
       return { name, description, output: rendered.text, diagnostics };
     } catch (e) {
@@ -52,7 +59,7 @@ export function compile(source: string): CompileResult {
       };
     }
   });
-  return { doc, macros, diagnostics: loaded.diagnostics };
+  return { doc, macros, diagnostics: [...loaded.diagnostics, ...lintYaml(loaded.yaml, loaded.at)] };
 }
 
 export type { Diagnostic } from './diagnostics';

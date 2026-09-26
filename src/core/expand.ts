@@ -323,7 +323,8 @@ export function defer(s: string): string {
     .replace(/%\{/g, '&#37;{')
     .replace(/\?\{/g, '&#63;{')
     .replace(/\[\[/g, '&#91;[')
-    .replace(/\]\]/g, ']&#93;');
+    .replace(/\]\]/g, ']&#93;')
+    .replace(/:/g, '&#58;');
 }
 
 function quoteName(n: string): string {

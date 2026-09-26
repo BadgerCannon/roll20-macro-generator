@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://badgercannon.github.io/roll20-macro-generator/r20macro.schema.json
+# Reproduces Handcrafted_macros/Healing at level.roll
+vars:
+  char: Alveriel
+
+macros:
+  healing-word:
+    description: Healing Word, cast at a chosen level
+    vars:
+      die: d4
+      target: A creature of your choice that you can see within range
+    template: 5eDefault
+    fields:
+      spell: 1
+      title: Healing Word
+      subheader: '@{${char}|character_name}'
+      subheader2: ' '
+      spellshowinfoblock: 1
+      spellshowdesc: 1
+      spellshowhealing: 1
+      spellcasttime: 1 bonus action
+      spellduration: Instantaneous
+      spelltarget: ${target}
+      spellrange: 60 feet
+      spellgainedfrom: Cleric
+      spellcomponents: V
+    text: '@{${char}|classactionspellcast}'
+    choose:
+      prompt: Attack type
+      for: { level: 1..9 }
+      fields:
+        spelldescription: >-
+          ${target} regains hit points equal to [[${level}]] ${die} + your spellcasting ability
+          modifier plus 2 plus spell level. This spell has no effect on undead or constructs.
+        subheaderright: Evocation Level ${level}
+        spellhealing: '[[${level}${die} + @{${char}|wisdom_mod} + 2 + ${level}]]'
+      overrides:
+        9: { fields: { subheaderright: Evocation Level 9 wait what the fuck } }
+
+  cure-wounds:
+    description: Cure Wounds, cast at a chosen level
+    extends: healing-word
+    vars:
+      die: d8
+      target: A creature you touch
+    fields:
+      title: Cure Wounds
+      spellcasttime: 1 action
+      spellrange: Touch
+      spellcomponents: V S
+    choose:
+      prompt: Attack type
+      for: { level: 1..9 }
+      fields:
+        spelldescription: >-
+          ${target} regains a number of hit points equal to [[${level}]] ${die} + your spellcasting
+          ability modifier plus 2 plus spell level. This spell has no effect on undead or constructs.
+        subheaderright: Evocation Level ${level}
+        spellhealing: '[[${level}${die} + @{${char}|wisdom_mod} + 2 + ${level}]]'
+      overrides:
+        9: { fields: { subheaderright: Evocation Level 9 oh no } }

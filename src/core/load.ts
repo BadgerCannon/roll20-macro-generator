@@ -11,6 +11,8 @@ export interface Loaded {
   diagnostics: Diagnostic[];
   /** Adds `from`/`to`/`line`/`col` to a diagnostic that has a `path`. */
   locate: (d: Diagnostic) => Diagnostic;
+  /** Adds a position to a diagnostic from a source offset. */
+  at: (d: Diagnostic, from: number, to?: number) => Diagnostic;
   yaml: YamlDocument;
 }
 
@@ -19,7 +21,7 @@ export function load(source: string): Loaded {
   const yaml = parseDocument(source, { lineCounter, prettyErrors: false, uniqueKeys: true });
   const diagnostics: Diagnostic[] = [];
 
-  const at = (d: Diagnostic, from: number, to: number): Diagnostic => {
+  const at = (d: Diagnostic, from: number, to = from): Diagnostic => {
     const { line, col } = lineCounter.linePos(from);
     return { ...d, from, to, line, col };
   };
@@ -48,7 +50,7 @@ export function load(source: string): Loaded {
       ),
     );
   }
-  if (yaml.errors.length) return { doc: undefined, diagnostics, locate, yaml };
+  if (yaml.errors.length) return { doc: undefined, diagnostics, locate, at, yaml };
 
   const result = Document.safeParse(yaml.toJS({ maxAliasCount: 1000 }));
   if (!result.success) {
@@ -62,7 +64,7 @@ export function load(source: string): Loaded {
         }),
       );
     }
-    return { doc: undefined, diagnostics, locate, yaml };
+    return { doc: undefined, diagnostics, locate, at, yaml };
   }
-  return { doc: result.data, diagnostics, locate, yaml };
+  return { doc: result.data, diagnostics, locate, at, yaml };
 }

@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../public/r20macro.schema.json
+# Reproduces Handcrafted_macros/IrisBonus.roll: each option is a whole different card.
+# Saved as a character ability, so @{…} refers to that character.
+macros:
+  iris-bonus:
+    description: Bonus action picker (off-hand attack or Cunning Action)
+    target: ability
+    vars:
+      attack: '[[ 1d20cs>@{meleeweaponcritrange2} + [[@{meleetohit2}]] + [[@{global_melee_attack_bonus}]] ]]'
+    template: 5eDefault
+    fields:
+      character_name: '@{character_name}'
+      subheader: '@{character_name}'
+    choose:
+      prompt: Bonus Action
+      options:
+        - label: Off-hand attack
+          fields:
+            title: '@{meleeweaponname2}'
+            subheaderright: Melee attack
+            weapon: 1
+            simple: 1
+            rollname: Attack
+            roll1: ${attack}
+            roll2: ${attack}
+            showadvroll: 1
+            weapondamage: '[[@{meleedmg2} + [[@{meleedmgbonus2}]] + [[(@{global_melee_damage_bonus})]] ]] @{meleedmgtype2} '
+            weaponcritdamage: Additional [[@{meleecritdmg2}]] damage
+      for: { action: [Dash, Disengage, Hide] }
+      label: Cunning ${action}
+      fields:
+        title: 'Cunning Action: ${action}'
+        subheaderright: Class ability
+        freetextname: ${action}
+        freetext: >-
+          Iris' quick thinking and agility allow her to move and act quickly. She can use a bonus
+          action to take the ${action} action
