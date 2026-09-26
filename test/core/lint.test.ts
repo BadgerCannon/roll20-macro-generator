@@ -62,6 +62,15 @@ describe('lint rules', () => {
     expect(r.macros[0]!.diagnostics[0]).toMatchObject({ severity: 'warning' });
   });
 
+  it('entities-in-collection uses the inherited target', () => {
+    const r = compile(`
+macros:
+  base: { target: ability, body: x }
+  child: { extends: base, body: '?{A|x,?{B|1|2}}' }
+`);
+    expect(r.macros[1]!.diagnostics.map((d) => d.code)).not.toContain('entities-in-collection');
+  });
+
   it('yaml-comment-trap', () => {
     const r = compile('macros:\n  m:\n    body: /w gm #attack\n');
     expect(r.macros[0]!.output).toBe('/w gm');

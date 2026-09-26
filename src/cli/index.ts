@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { compile, type CompileResult, type Diagnostic } from '../core';
+import { compile, type Diagnostic } from '../core';
 
 const USAGE = `Usage:
   r20m build <file> [--macro <name>] [--json]
@@ -23,10 +23,6 @@ function format(file: string, d: Diagnostic): string {
   const pos = d.line !== undefined ? `:${d.line}:${d.col}` : '';
   const macro = d.macro ? ` [${d.macro}]` : '';
   return `${file}${pos}: ${d.severity} ${d.code}: ${d.message}${macro}`;
-}
-
-function all(r: CompileResult): Diagnostic[] {
-  return [...r.diagnostics, ...r.macros.flatMap((m) => m.diagnostics)];
 }
 
 function main(argv: string[]): number {
@@ -51,7 +47,11 @@ function main(argv: string[]): number {
   const report: unknown[] = [];
   for (const file of cmd === 'build' ? files.slice(0, 1) : files) {
     const result = compile(readFileSync(file, 'utf8'));
-    const diagnostics = all(result).filter(shown);
+    const macros = result.macros.filter((m) => !values.macro || m.name === values.macro);
+    // Only the document and the macros being output decide the exit status.
+    const diagnostics = [...result.diagnostics, ...macros.flatMap((m) => m.diagnostics)].filter(
+      shown,
+    );
     if (diagnostics.some((d) => d.severity === 'error')) failed = true;
 
     if (cmd === 'check') {
@@ -60,7 +60,6 @@ function main(argv: string[]): number {
       continue;
     }
 
-    const macros = result.macros.filter((m) => !values.macro || m.name === values.macro);
     if (values.macro && !macros.length) {
       console.error(`${file}: no macro named "${values.macro}"`);
       return 1;

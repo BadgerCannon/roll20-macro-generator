@@ -346,10 +346,12 @@ export function chatPrefix(chat: Chat | undefined): string {
 export interface Expanded {
   text: string;
   diagnostics: Diagnostic[];
+  /** The macro with its `extends` chain merged in. */
+  macro: Macro;
 }
 
 export function expandMacro(doc: Document, name: string): Expanded {
   const macro = resolveMacro(doc, name);
   const ex = new Expander(doc, macro, name);
-  return { text: ex.macroText(), diagnostics: ex.diagnostics };
+  return { text: ex.macroText(), diagnostics: ex.diagnostics, macro };
 }

@@ -28,4 +28,11 @@ describe('r20m CLI', () => {
     expect(r.code).toBe(1);
     expect(r.stderr).toMatch(/broken\.r20\.yaml:\d+:\d+: error unclosed-query/);
   }, 30_000);
+
+  it('build --macro ignores errors in other macros', () => {
+    const r = run('build', 'test/fixtures/mixed.r20.yaml', '--macro', 'good', '-q');
+    expect(r.code).toBe(0);
+    expect(r.stdout.trim()).toBe('/r 1d20');
+    expect(run('build', 'test/fixtures/mixed.r20.yaml', '--macro', 'broken').code).toBe(1);
+  }, 30_000);
 });

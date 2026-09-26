@@ -42,7 +42,7 @@ export function compile(source: string): CompileResult {
           at({ severity: p.severity, code: p.code, message: p.message }),
         ),
         ...lintMacro({
-          macro: doc.macros[name]!,
+          macro: expanded.macro,
           expanded: expanded.text,
           nodes: parsed.nodes,
           output: rendered.text,
