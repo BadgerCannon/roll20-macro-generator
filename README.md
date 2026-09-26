@@ -53,6 +53,17 @@ More in [`examples/`](examples). Each file there reproduces one of the hand-writ
 
 ## Using it
 
+### In the browser
+
+Open **<https://badgercannon.github.io/roll20-macro-generator/>**. Type or paste DSL on the left;
+the macros appear on the right as you type, each with a **Copy** button.
+
+- **Examples** loads any file from [`examples/`](examples).
+- **Save** keeps a snapshot in **History**, which stays in this browser (localStorage). From
+  History you can restore, rename, delete, and export or import snapshots as JSON.
+- Your current text is kept as a draft between visits.
+- **Share** copies a link that contains the DSL itself; nothing is uploaded.
+
 ### Command line
 
 ```sh
@@ -152,7 +163,12 @@ npm run typecheck
 npm run lint         # eslint + prettier --check
 npm run gen:schema   # regenerate public/r20macro.schema.json
 npm run build:cli    # dist/cli/index.js
+npm run dev          # web app with hot reload
+npm run build:web    # static site in dist/web (deployed to GitHub Pages from main)
+npm run test:e2e     # Playwright tests against the built site
 ```
+
+`test:e2e` needs Playwright's Chromium: `npx playwright install --with-deps chromium`.
 
 See [`CLAUDE.md`](CLAUDE.md) for the project layout.
 

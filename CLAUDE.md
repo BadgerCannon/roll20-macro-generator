@@ -18,4 +18,6 @@ npm run typecheck
 npm run lint        # eslint + prettier --check
 npm run gen:schema  # regenerate public/r20macro.schema.json (CI checks it is fresh)
 npm run r20m -- build examples/basics.r20.yaml
+npm run dev         # web app (src/web)
+npm run test:e2e    # Playwright, needs `npx playwright install --with-deps chromium`
 ```

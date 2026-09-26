@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Write Roll20 macros in YAML and get copy-paste-ready macro text with escaping done for you."
+    />
+    <title>Roll20 Macro Generator</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="bar">
+      <h1>Roll20 Macro Generator</h1>
+      <div class="actions">
+        <label class="select">
+          <span class="sr-only">Load example</span>
+          <select id="examples" aria-label="Load example">
+            <option value="">Examples…</option>
+          </select>
+        </label>
+        <button id="save" type="button">Save</button>
+        <button id="history-toggle" type="button" aria-expanded="false" aria-controls="history">
+          History
+        </button>
+        <button id="share" type="button" title="Copy a link that contains this DSL">Share</button>
+        <a
+          class="help"
+          href="https://github.com/BadgerCannon/roll20-macro-generator#dsl-reference"
+          target="_blank"
+          rel="noopener"
+          >Help</a
+        >
+      </div>
+    </header>
+
+    <main class="panes">
+      <section class="pane editor-pane" aria-label="DSL editor">
+        <div class="pane-head">
+          <h2>DSL <span class="muted">(YAML)</span></h2>
+          <span id="status" class="muted" role="status" aria-live="polite"></span>
+        </div>
+        <div id="editor"></div>
+      </section>
+      <section class="pane output-pane" aria-label="Generated macros">
+        <div class="pane-head">
+          <h2>Macros</h2>
+          <span id="summary" class="muted"></span>
+        </div>
+        <div id="doc-diagnostics"></div>
+        <div id="output"></div>
+      </section>
+    </main>
+
+    <aside id="history" class="drawer" hidden aria-label="Saved history">
+      <div class="drawer-head">
+        <h2>History</h2>
+        <button id="history-close" type="button" aria-label="Close history">✕</button>
+      </div>
+      <p id="storage-warning" class="warn" hidden>
+        Browser storage is not available, so history cannot be saved in this window.
+      </p>
+      <ul id="history-list"></ul>
+      <p id="history-empty" class="muted">
+        Nothing saved yet. Press <b>Save</b> to keep a snapshot.
+      </p>
+      <div class="drawer-foot">
+        <button id="history-export" type="button">Export</button>
+        <label class="button">
+          Import<input id="history-import" type="file" accept="application/json,.json" hidden />
+        </label>
+      </div>
+    </aside>
+
+    <script type="module" src="/src/web/main.ts"></script>
+  </body>
+</html>
