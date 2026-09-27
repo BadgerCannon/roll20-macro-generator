@@ -7,6 +7,7 @@ import type {
   Choose,
   Document,
   FieldValue,
+  LoopOption,
   Macro,
   Option,
   OptionPatch,
@@ -215,46 +216,12 @@ class Expander {
 
   choose(c: Choose, path: Path, scope: Record<string, Value> = {}): string {
     const opts: string[] = [];
-    (c.options ?? []).forEach((o, i) => opts.push(this.option(o, [...path, 'options', i], scope)));
+    (c.options ?? []).forEach((o, i) =>
+      opts.push(...this.option(o, [...path, 'options', i], scope)),
+    );
+    // Top-level `for` is shorthand for one loop item after the explicit options.
+    if (c.for) opts.push(...this.loop({ ...c, for: c.for }, path, scope));
 
-    if (c.for) {
-      const entries = Object.entries(c.for);
-      if (entries.length !== 1) {
-        throw new ExpandError('choose-for', '`for` must have exactly one loop variable', [
-          ...path,
-          'for',
-        ]);
-      }
-      const [varName, spec] = entries[0]!;
-      for (const v of loopValues(spec, [...path, 'for', varName])) {
-        const s = { ...scope, [varName]: v };
-        const ov: OptionPatch = own(c.overrides, String(v)) ?? {};
-        const base: OptionPatch = {
-          label: c.label ?? `\${${varName}}`,
-          ...(c.value !== undefined && { value: c.value }),
-          ...(c.fields && { fields: c.fields }),
-          ...(c.text !== undefined && { text: c.text }),
-        };
-        const merged = {
-          ...base,
-          ...ov,
-          label: ov.label ?? base.label!,
-          fields: mergeFields(base.fields, ov.fields),
-        };
-        opts.push(this.option(merged, path, s));
-      }
-      for (const k of Object.keys(c.overrides ?? {})) {
-        if (!loopValues(spec, []).map(String).includes(k)) {
-          this.diagnostics.push({
-            severity: 'warning',
-            code: 'override-unused',
-            message: `Override \`${k}\` does not match any \`for\` value`,
-            macro: this.name,
-            path: [...path, 'overrides', k],
-          });
-        }
-      }
-    }
     // A single option shows a text box, not a drop-down; add an empty option (kb: queries.md).
     if (opts.length === 1) opts.push(',');
 
@@ -265,9 +232,61 @@ class Expander {
       : `?{${prompt}${opts.map((o) => '|' + o).join('')}}`;
   }
 
-  private option(o: Option, path: Path, scope: Record<string, Value>): string {
-    if ('separator' in o)
-      return o.separator === true ? SEPARATOR : this.str(o.separator, path, scope);
+  private option(o: Option, path: Path, scope: Record<string, Value>): string[] {
+    if ('separator' in o) {
+      return [o.separator === true ? SEPARATOR : this.str(o.separator, path, scope)];
+    }
+    if ('for' in o) return this.loop(o, path, scope);
+    return [this.single(o, path, scope)];
+  }
+
+  /** Expands a loop into one option per value (kb: handcrafted-patterns.md). */
+  private loop(l: LoopOption, path: Path, scope: Record<string, Value>): string[] {
+    const entries = Object.entries(l.for);
+    if (entries.length !== 1) {
+      throw new ExpandError('choose-for', '`for` must have exactly one loop variable', [
+        ...path,
+        'for',
+      ]);
+    }
+    const [varName, spec] = entries[0]!;
+    const values = loopValues(spec, [...path, 'for', varName]);
+    const base: OptionPatch = {
+      label: l.label ?? `\${${varName}}`,
+      ...(l.value !== undefined && { value: l.value }),
+      ...(l.fields && { fields: l.fields }),
+      ...(l.text !== undefined && { text: l.text }),
+    };
+    const out = values.map((v) => {
+      const ov: OptionPatch = own(l.overrides, String(v)) ?? {};
+      const merged = {
+        ...base,
+        ...ov,
+        label: ov.label ?? base.label!,
+        fields: mergeFields(base.fields, ov.fields),
+      };
+      return this.single(merged, path, { ...scope, [varName]: v });
+    });
+    const keys = values.map(String);
+    for (const k of Object.keys(l.overrides ?? {})) {
+      if (!keys.includes(k)) {
+        this.diagnostics.push({
+          severity: 'warning',
+          code: 'override-unused',
+          message: `Override \`${k}\` does not match any \`for\` value`,
+          macro: this.name,
+          path: [...path, 'overrides', k],
+        });
+      }
+    }
+    return out;
+  }
+
+  private single(
+    o: OptionPatch & { label: string | number },
+    path: Path,
+    scope: Record<string, Value>,
+  ): string {
     const label = this.str(o.label, [...path, 'label'], scope);
     let value: string;
     if (o.value !== undefined) value = this.str(o.value, [...path, 'value'], scope);

@@ -437,14 +437,14 @@
           "description": "Question shown to the player."
         },
         "options": {
-          "description": "Explicit options, listed before generated ones.",
+          "description": "Options in order. Items are `{label, …}`, `{separator: true}`, or a `{for: …}` loop.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/Option"
           }
         },
         "for": {
-          "description": "Generate one option per value: `{ level: 1..9 }` or `{ die: [d4, d6] }`.",
+          "description": "Shorthand for a query that is one loop: generates options after any `options`.",
           "type": "object",
           "propertyNames": {
             "type": "string"
@@ -539,6 +539,9 @@
           "additionalProperties": false
         },
         {
+          "$ref": "#/$defs/LoopOption"
+        },
+        {
           "type": "object",
           "properties": {
             "label": {
@@ -570,6 +573,74 @@
           "additionalProperties": false
         }
       ]
+    },
+    "LoopOption": {
+      "type": "object",
+      "properties": {
+        "for": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^-?\\d+\\s*\\.\\.\\s*-?\\d+$",
+                "description": "Inclusive integer range, e.g. `1..9`."
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                  ]
+                }
+              }
+            ]
+          },
+          "description": "One loop variable: `{ level: 1..9 }` or `{ action: [Dash, Hide] }`."
+        },
+        "label": {
+          "description": "Label of each generated option (default: the loop value).",
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "value": {
+          "description": "Value of each generated option.",
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "fields": {
+          "$ref": "#/$defs/Fields"
+        },
+        "text": {
+          "description": "Text of each generated option.",
+          "type": "string"
+        },
+        "overrides": {
+          "description": "Changes for single generated options, keyed by loop value.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/OptionPatch"
+          }
+        }
+      },
+      "required": [
+        "for"
+      ],
+      "additionalProperties": false,
+      "description": "Generates one option per loop value, in place in the options list."
     },
     "OptionPatch": {
       "type": "object",

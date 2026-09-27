@@ -26,12 +26,12 @@ macros:
             showadvroll: 1
             weapondamage: '[[@{meleedmg2} + [[@{meleedmgbonus2}]] + [[(@{global_melee_damage_bonus})]] ]] @{meleedmgtype2} '
             weaponcritdamage: Additional [[@{meleecritdmg2}]] damage
-      for: { action: [Dash, Disengage, Hide] }
-      label: Cunning ${action}
-      fields:
-        title: 'Cunning Action: ${action}'
-        subheaderright: Class ability
-        freetextname: ${action}
-        freetext: >-
-          Iris' quick thinking and agility allow her to move and act quickly. She can use a bonus
-          action to take the ${action} action
+        - for: { action: [Dash, Disengage, Hide] }
+          label: Cunning ${action}
+          fields:
+            title: 'Cunning Action: ${action}'
+            subheaderright: Class ability
+            freetextname: ${action}
+            freetext: >-
+              Iris' quick thinking and agility allow her to move and act quickly. She can use a
+              bonus action to take the ${action} action
