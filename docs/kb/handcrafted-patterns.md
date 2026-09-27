@@ -33,7 +33,8 @@ generator must reproduce. They all target the `5eDefault` roll template.
 
 - `vars:` for the character name used in every `@{Alveriel|…}` call.
 - `template:` + `fields:` for the static fields.
-- `choose:` (query that injects fields/text) with a `for:` loop over levels, `${level}`
+- `choose:` (query that injects fields/text) with `for:` loops, either as items in `options`
+  (IrisBonus: one explicit option, then a loop) or as a shorthand for a whole-loop query; `${level}`
   expressions such as `${level + 3}`, and `overrides:` for one-off changes (level 9 jokes).
 - `extends:` so Cure Wounds reuses Healing Word's fields.
 - A query placed inside a field value (Bron) with automatic comma escaping and `} }}` spacing.

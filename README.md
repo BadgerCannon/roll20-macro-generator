@@ -119,11 +119,38 @@ A file has optional `vars` and a map of `macros`. Every string may use `${expr}`
 | Key | Meaning |
 | --- | --- |
 | `prompt` | Question shown to the player. |
-| `options` | List of `{label, value}` or `{label, fields, text}`, or `{separator: true}`. |
-| `for` | One loop variable: `{level: 1..9}` or `{action: [Dash, Hide]}`. Adds one option per value. |
-| `label`, `value`, `fields`, `text` | Template for generated options. `label` defaults to the loop value. |
-| `overrides` | Changes for single generated options, keyed by loop value: `{9: {fields: {…}}}`. |
+| `options` | The options, in order. Each item is one of the three kinds below. |
 | `layout` | `pretty` (default, one option per line) or `compact`. |
+
+Items in `options`:
+
+| Item | Meaning |
+| --- | --- |
+| `{label, value}` or `{label, fields, text}` | One option. |
+| `{separator: true}` | A divider row (or give it your own text). |
+| `{for, label, value, fields, text, overrides}` | A loop: one option per value, placed where the item is. |
+
+In a loop item:
+
+- `for` names one loop variable, such as `{level: 1..9}` or `{action: [Dash, Hide]}`.
+- `label`, `value`, `fields` and `text` are the template for each option. `label` defaults to the
+  loop value.
+- `overrides` changes single options, keyed by loop value: `{9: {fields: {…}}}`.
+
+```yaml
+choose:
+  prompt: Bonus Action
+  options:
+    - label: Off-hand attack
+      fields: { title: Off-hand attack }
+    - for: { action: [Dash, Disengage, Hide] }
+      label: Cunning ${action}
+      fields: { title: 'Cunning Action: ${action}' }
+```
+
+If a query is nothing but one loop, you can write the loop keys directly under `choose` instead
+of wrapping them in `options` (see `examples/healing.r20.yaml`). Those options come after any
+`options` items.
 
 A drop-down with a single option gets an empty second option, so Roll20 shows a drop-down
 rather than a text box.

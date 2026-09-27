@@ -90,7 +90,18 @@ export interface OptionPatch {
   text?: string;
 }
 
-export type Option = (OptionPatch & { label: string | number }) | { separator: true | string };
+/** An `options` item that generates one option per loop value. */
+export interface LoopOption {
+  for: Record<string, string | Scalar[]>;
+  label?: string | number;
+  value?: Scalar;
+  fields?: Record<string, FieldValue>;
+  text?: string;
+  overrides?: Record<string, OptionPatch>;
+}
+
+export type Option =
+  (OptionPatch & { label: string | number }) | { separator: true | string } | LoopOption;
 
 export interface Choose {
   prompt: string;
@@ -146,10 +157,37 @@ const OptionPatch: z.ZodType<OptionPatch> = z
   )
   .meta({ id: 'OptionPatch' });
 
+const LoopFor = z
+  .record(z.string(), z.union([Range, z.array(Scalar)]))
+  .describe('One loop variable: `{ level: 1..9 }` or `{ action: [Dash, Hide] }`.');
+
+const LoopOption: z.ZodType<LoopOption> = z
+  .lazy(() =>
+    z
+      .object({
+        for: LoopFor,
+        label: z
+          .union([z.string(), z.number()])
+          .optional()
+          .describe('Label of each generated option (default: the loop value).'),
+        value: Scalar.optional().describe('Value of each generated option.'),
+        fields: Fields.optional(),
+        text: z.string().optional().describe('Text of each generated option.'),
+        overrides: z
+          .record(z.string(), OptionPatch)
+          .optional()
+          .describe('Changes for single generated options, keyed by loop value.'),
+      })
+      .strict()
+      .describe('Generates one option per loop value, in place in the options list.'),
+  )
+  .meta({ id: 'LoopOption' });
+
 const Option: z.ZodType<Option> = z
   .lazy(() =>
     z.union([
       z.object({ separator: z.union([z.literal(true), z.string()]) }).strict(),
+      LoopOption,
       z
         .object({
           label: z.union([z.string(), z.number()]).describe('Text shown in the drop-down.'),
@@ -170,11 +208,12 @@ const Choose: z.ZodType<Choose> = z
         options: z
           .array(Option)
           .optional()
-          .describe('Explicit options, listed before generated ones.'),
-        for: z
-          .record(z.string(), z.union([Range, z.array(Scalar)]))
-          .optional()
-          .describe('Generate one option per value: `{ level: 1..9 }` or `{ die: [d4, d6] }`.'),
+          .describe(
+            'Options in order. Items are `{label, …}`, `{separator: true}`, or a `{for: …}` loop.',
+          ),
+        for: LoopFor.optional().describe(
+          'Shorthand for a query that is one loop: generates options after any `options`.',
+        ),
         label: z
           .union([z.string(), z.number()])
           .optional()

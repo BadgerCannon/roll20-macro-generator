@@ -107,6 +107,44 @@ macros:
     );
   });
 
+  it('expands loop items in place inside options', () => {
+    expect(
+      out(`
+macros:
+  m:
+    choose:
+      prompt: Action
+      layout: compact
+      options:
+        - { label: Attack, value: atk }
+        - for: { a: [Dash, Hide] }
+          label: Cunning \${a}
+          value: '\${a}!'
+          overrides: { Hide: { value: shh } }
+        - { separator: true }
+        - for: { n: 1..2 }
+          value: 'lvl \${n}'
+`),
+    ).toBe(
+      '?{Action|Attack,atk|Cunning Dash,Dash!|Cunning Hide,shh|-----------------------|1,lvl 1|2,lvl 2}',
+    );
+  });
+
+  it('keeps the top-level for shorthand after explicit options', () => {
+    expect(
+      out(`
+macros:
+  m:
+    choose:
+      prompt: P
+      layout: compact
+      options: [{ label: First, value: '0' }]
+      for: { n: 1..2 }
+      value: 'v\${n}'
+`),
+    ).toBe('?{P|First,0|1,v1|2,v2}');
+  });
+
   it('puts a query inside a field value and avoids `}}}`', () => {
     expect(
       out(`
@@ -242,6 +280,18 @@ macros:
       overrides: { 9: { value: y } }
 `);
     expect(r.macros[0]!.diagnostics.map((d) => d.code)).toEqual(['override-unused']);
+    const item = compile(`
+macros:
+  m:
+    choose:
+      prompt: L
+      options:
+        - { for: { l: 1..2 }, value: x, overrides: { 9: { value: y } } }
+`);
+    expect(item.macros[0]!.diagnostics[0]).toMatchObject({
+      code: 'override-unused',
+      path: ['macros', 'm', 'choose', 'options', 0, 'overrides', '9'],
+    });
   });
 
   it('reports parse problems in the expanded text', () => {
