@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../public/r20macro.schema.json
+# D&D 5e cantrips whose damage dice scale with character level.
+#
+# Cantrips roll 1 die at levels 1–4, 2 at 5–10, 3 at 11–16 and 4 at 17–20. The rule, as exact
+# integer maths: floor((level + 1) / 6) + 1. It sits in its own inline roll so the outer roll
+# can use it as a dice count: [[ [[floor((@{level}+1)/6)+1]]d10 ]] (no space before "d10").
+#
+# Save these as abilities on the caster's sheet. Attribute names follow the handcrafted
+# Guiding Bolt (`<ability>_attack_roll_bonus`); check `level` and `spell_save_dc` against your
+# sheet and adjust the vars below.
+vars:
+  cantrip_dice: '[[floor((@{level}+1)/6)+1]]'
+  save_dc: '[[@{spell_save_dc}]]'
+
+macros:
+  fire-bolt:
+    description: Fire Bolt (1d10 fire per die, ranged spell attack)
+    target: ability
+    vars:
+      ability: int
+      die: d10
+      damage_type: Fire
+    template: 5eDefault
+    fields:
+      character_name: '@{character_name}'
+      subheader: '@{character_name}'
+      title: Fire Bolt
+      subheaderright: Evocation cantrip · 120 ft
+      weapon: 1
+      simple: 1
+      rollname: Spell attack
+      roll1: '[[1d20cs>20 + @{${ability}_attack_roll_bonus}]]'
+      roll2: '[[1d20cs>20 + @{${ability}_attack_roll_bonus}]]'
+      showadvroll: 1
+      weapondamage: '[[ ${cantrip_dice}${die} ]] ${damage_type} damage'
+      weaponcritdamage: plus [[ ${cantrip_dice}${die} ]] damage
+
+  eldritch-blast:
+    description: >-
+      Eldritch Blast, one beam per use. Beams can target different creatures, so use this once
+      per beam.
+    extends: fire-bolt
+    vars:
+      ability: cha
+      damage_type: Force
+    fields:
+      title: Eldritch Blast
+      # Same formula as the damage dice: 1 beam, then 2 at level 5, 3 at 11, 4 at 17.
+      subheaderright: 'Evocation cantrip · 120 ft · ${cantrip_dice} beams per cast'
+      weapondamage: '[[ 1${die} ]] ${damage_type} damage (one beam)'
+      weaponcritdamage: plus [[ 1${die} ]] damage
+
+  toll-the-dead:
+    description: Toll the Dead (Wisdom save; d8, or d12 if the target is missing any hit points)
+    target: ability
+    queries:
+      die:
+        prompt: Is the target missing any hit points?
+        options: { 'No (d8)': 8, 'Yes (d12)': 12 }
+    template: 5eDefault
+    fields:
+      character_name: '@{character_name}'
+      subheader: '@{character_name}'
+      title: Toll the Dead
+      subheaderright: Necromancy cantrip · 60 ft
+      freetextname: 'Wisdom save DC ${save_dc}'
+      freetext: >-
+        On a failed save the target takes [[ ${cantrip_dice}d${die} ]] necrotic damage.
