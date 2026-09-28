@@ -92,6 +92,7 @@ const SEPARATOR = '-----------------------';
 class Expander {
   private usedRolls = new Set<string>();
   private queryStack: string[] = [];
+  private varStack: string[] = [];
   readonly diagnostics: Diagnostic[] = [];
 
   constructor(
@@ -115,7 +116,9 @@ class Expander {
       );
     }
     const resolve = (id: string): Value | undefined => {
-      const v = own(scope, id) ?? own(this.macro.vars, id) ?? own(this.doc.vars, id);
+      const loop = own(scope, id);
+      if (loop !== undefined) return loop;
+      const v = this.variable(id, scope);
       if (v !== undefined) return v;
       const q = own(this.macro.queries, id);
       if (q !== undefined) return this.query(id, q, scope);
@@ -129,6 +132,30 @@ class Expander {
       if (e instanceof ExpandError) throw e;
       if (e instanceof ExprError) throw new ExpandError(e.code, e.message, path);
       throw e;
+    }
+  }
+
+  /**
+   * File or macro variable. String values are interpolated too, so one var can build on another
+   * (`beams: ${cantrip_dice}`).
+   */
+  private variable(id: string, scope: Record<string, Value>): Value | undefined {
+    const inMacro = own(this.macro.vars, id);
+    const v = inMacro ?? own(this.doc.vars, id);
+    if (typeof v !== 'string' || !v.includes('${')) return v;
+    const path = inMacro !== undefined ? [...this.base, 'vars', id] : ['vars', id];
+    if (this.varStack.includes(id)) {
+      throw new ExpandError(
+        'var-cycle',
+        `Variable \`${id}\` refers to itself: ${[...this.varStack, id].join(' → ')}`,
+        path,
+      );
+    }
+    this.varStack.push(id);
+    try {
+      return this.str(v, path, scope);
+    } finally {
+      this.varStack.pop();
     }
   }
 

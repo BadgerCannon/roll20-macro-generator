@@ -5,16 +5,20 @@
 # integer maths: floor((level + 1) / 6) + 1. It sits in its own inline roll so the outer roll
 # can use it as a dice count: [[ [[floor((@{level}+1)/6)+1]]d10 ]] (no space before "d10").
 #
-# Save these as abilities on the caster's sheet. Attribute names follow the handcrafted
-# Guiding Bolt (`<ability>_attack_roll_bonus`); check `level` and `spell_save_dc` against your
-# sheet and adjust the vars below.
+# Save these as abilities on the caster's sheet, then check them against your sheet:
+# - `level` and `spell_save_dc` below are the attribute names to use; change them if yours differ.
+# - Each macro's `ability` var picks the attack bonus (`<ability>_attack_roll_bonus`, as in the
+#   handcrafted Guiding Bolt). Fire Bolt uses `int` (wizard); set `cha` for a sorcerer.
 vars:
-  cantrip_dice: '[[floor((@{level}+1)/6)+1]]'
+  level: '@{level}'
+  cantrip_dice: '[[floor((${level}+1)/6)+1]]'
+  # Wrapped in an inline roll because sheets often store the DC as a formula, which would
+  # otherwise show as formula text (kb: references.md "Auto-calc attributes").
   save_dc: '[[@{spell_save_dc}]]'
 
 macros:
   fire-bolt:
-    description: Fire Bolt (1d10 fire per die, ranged spell attack)
+    description: Fire Bolt (ranged spell attack, d10 fire, scales with level)
     target: ability
     vars:
       ability: int
@@ -43,10 +47,11 @@ macros:
     vars:
       ability: cha
       damage_type: Force
+      # Beams per cast follow the same steps as cantrip dice: 1, then 2/3/4 at levels 5/11/17.
+      beams: ${cantrip_dice}
     fields:
       title: Eldritch Blast
-      # Same formula as the damage dice: 1 beam, then 2 at level 5, 3 at 11, 4 at 17.
-      subheaderright: 'Evocation cantrip · 120 ft · ${cantrip_dice} beams per cast'
+      subheaderright: 'Evocation cantrip · 120 ft · ${beams} beams per cast'
       weapondamage: '[[ 1${die} ]] ${damage_type} damage (one beam)'
       weaponcritdamage: plus [[ 1${die} ]] damage
 

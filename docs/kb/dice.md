@@ -6,7 +6,7 @@ Pathfinder Examples; rmacro grammar.
 | Syntax | Meaning |
 | --- | --- |
 | `NdX`, `dX`, `dF` | Roll N X-sided dice; Fate dice |
-| `cs>N`, `cs<N`, `cs=N`, `cf<N`, `cf>N` | Critical success / failure highlight thresholds. **`>` and `<` are inclusive**: `1d20cs>19` highlights 19 or 20, `1d20cs>20` only a natural 20 (5e). `1d100cs0cf0` turns highlights off |
+| `cs>N`, `cs<N`, `cs=N`, `cf<N`, `cf>N` | Critical success / failure highlight thresholds. `cs>N` is inclusive (sourced): `1d20cs>19` highlights 19 or 20, `1d20cs>20` only a natural 20 (5e). The other `<`/`>` forms are assumed inclusive by symmetry (see Crit ranges). `1d100cs0cf0` turns highlights off |
 | `khN`, `klN`, `dhN`, `dlN` | Keep / drop highest / lowest |
 | `!`, `!!`, `!p` | Exploding, compounding, penetrating |
 | `rN`, `roN` | Reroll (once) |
@@ -49,6 +49,8 @@ so reuse after such a query is unstable.
 ## Crit ranges
 
 Source: Pathfinder Examples → _Calculating Crits_: "`1d20cs>19` will display the result with a
-green critical highlight on a 19 or 20. `1d20cs>15`, on a 15-20". So in `cs>N` and `cf<N` the
-comparison includes `N`. For D&D 5e (crit only on a natural 20) use `1d20cs>20`, as in the
-handcrafted Guiding Bolt.
+green critical highlight on a 19 or 20. `1d20cs>15`, on a 15-20". So `cs>N` includes `N`.
+For D&D 5e (crit only on a natural 20) use `1d20cs>20`, as in the handcrafted Guiding Bolt.
+
+The sources quote no example for `cs<N`, `cf<N` or `cf>N`. These notes assume all four `<`/`>`
+forms include `N`, by symmetry with `cs>N`; confirm in Roll20 before relying on an edge value.

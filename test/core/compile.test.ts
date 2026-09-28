@@ -232,6 +232,27 @@ macros:
   });
 });
 
+describe('variables', () => {
+  it('interpolates vars inside vars, file and macro level', () => {
+    expect(
+      out(`
+vars:
+  level: '@{level}'
+  dice: '[[floor((\${level}+1)/6)+1]]'
+macros:
+  m:
+    vars: { beams: '\${dice}' }
+    body: '\${beams} beams, [[ \${dice}d10 ]]'
+`),
+    ).toBe('[[floor((@{level}+1)/6)+1]] beams, [[ [[floor((@{level}+1)/6)+1]]d10 ]]');
+  });
+
+  it('reports variable cycles', () => {
+    const r = compile("vars: { a: '${b}', b: '${a}' }\nmacros:\n  m: { body: '${a}' }\n");
+    expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'var-cycle', line: 1 });
+  });
+});
+
 describe('compile diagnostics', () => {
   it('reports YAML syntax errors with a position', () => {
     const r = compile('macros:\n  m: [unclosed\n');
