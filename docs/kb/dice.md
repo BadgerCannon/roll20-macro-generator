@@ -6,7 +6,7 @@ Pathfinder Examples; rmacro grammar.
 | Syntax | Meaning |
 | --- | --- |
 | `NdX`, `dX`, `dF` | Roll N X-sided dice; Fate dice |
-| `cs>N`, `cs<N`, `cs=N`, `cf<N`, `cf>N` | Critical success / failure highlight thresholds (`1d20cs>19`, `1d100cs0cf0`) |
+| `cs>N`, `cs<N`, `cs=N`, `cf<N`, `cf>N` | Critical success / failure highlight thresholds. **`>` and `<` are inclusive**: `1d20cs>19` highlights 19 or 20, `1d20cs>20` only a natural 20 (5e). `1d100cs0cf0` turns highlights off |
 | `khN`, `klN`, `dhN`, `dlN` | Keep / drop highest / lowest |
 | `!`, `!!`, `!p` | Exploding, compounding, penetrating |
 | `rN`, `roN` | Reroll (once) |
@@ -45,3 +45,10 @@ separate message with its own numbering.
 `$[[n]]` is display-only; it cannot be used inside another inline roll's math. If a
 preceding query option contains inline rolls, the index depends on the chosen option,
 so reuse after such a query is unstable.
+
+## Crit ranges
+
+Source: Pathfinder Examples → _Calculating Crits_: "`1d20cs>19` will display the result with a
+green critical highlight on a 19 or 20. `1d20cs>15`, on a 15-20". So in `cs>N` and `cf<N` the
+comparison includes `N`. For D&D 5e (crit only on a natural 20) use `1d20cs>20`, as in the
+handcrafted Guiding Bolt.
