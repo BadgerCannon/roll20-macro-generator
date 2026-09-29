@@ -37,6 +37,10 @@ export const MAX_LOOP_VALUES = 1000;
  */
 export const MAX_WORK = 200_000; // `${…}` references resolved + options generated
 export const MAX_OUTPUT = 100_000; // characters of expanded text
+/** Characters built across all intermediate strings, checked before each piece is appended. */
+export const MAX_BUILT = 4_000_000;
+/** How deeply vars and named queries may refer to one another. */
+export const MAX_DEPTH = 50;
 
 /** Private-use characters the expander uses as markers (see r20/parse.ts). */
 const RESERVED = /[\uE000\uE001]/;
@@ -102,6 +106,37 @@ class Expander {
   private queryStack: string[] = [];
   private varStack: string[] = [];
   private work = 0;
+  private built = 0;
+  private depth = 0;
+
+  private limit(message: string, path: Path): never {
+    throw new ExpandError('expansion-limit', message, path);
+  }
+
+  /** Counts characters about to be appended; throws before an oversized string is built. */
+  private charge(piece: string, path: Path): string {
+    this.built += piece.length;
+    if (this.built > MAX_BUILT) {
+      this.limit(
+        `Expansion builds too much text (over ${MAX_BUILT.toLocaleString('en')} characters). Check for large vars used many times`,
+        path,
+      );
+    }
+    return piece;
+  }
+
+  /** Runs `fn` one var/query level deeper; throws past `MAX_DEPTH`. */
+  private nested<T>(path: Path, fn: () => T): T {
+    if (++this.depth > MAX_DEPTH) {
+      this.depth--;
+      this.limit(`Vars and queries nest more than ${MAX_DEPTH} levels deep`, path);
+    }
+    try {
+      return fn();
+    } finally {
+      this.depth--;
+    }
+  }
 
   /** Counts expansion work; throws once the macro exceeds `MAX_WORK`. */
   private spend(path: Path) {
@@ -160,7 +195,8 @@ class Expander {
       return undefined;
     };
     try {
-      return this.sized(interpolate(text, resolve), path);
+      const out = interpolate(text, resolve, (v) => this.charge(String(v), path));
+      return this.sized(this.charge(out, path), path);
     } catch (e) {
       if (e instanceof ExpandError) throw e;
       if (e instanceof ExprError) throw new ExpandError(e.code, e.message, path);
@@ -186,7 +222,7 @@ class Expander {
     }
     this.varStack.push(id);
     try {
-      return this.str(v, path, scope);
+      return this.nested(path, () => this.str(v, path, scope));
     } finally {
       this.varStack.pop();
     }
@@ -203,6 +239,14 @@ class Expander {
     }
     this.queryStack.push(id);
     try {
+      return this.nested(path, () => this.queryText(q, path, scope));
+    } finally {
+      this.queryStack.pop();
+    }
+  }
+
+  private queryText(q: QueryDef, path: Path, scope: Record<string, Value>): string {
+    {
       if (typeof q === 'string') return `?{${this.str(q, path, scope)}}`;
       let out = '?{' + this.str(q.prompt, [...path, 'prompt'], scope);
       if (q.default !== undefined) out += '|' + this.str(q.default, [...path, 'default'], scope);
@@ -221,8 +265,6 @@ class Expander {
         }
       }
       return out + '}';
-    } finally {
-      this.queryStack.pop();
     }
   }
 
@@ -243,7 +285,7 @@ class Expander {
       if (v === null) continue;
       parts.push(`{{${this.str(k, path, scope)}=${this.fieldValue(v, [...path, k], scope)}}}`);
     }
-    return parts.join(' ');
+    return this.charge(parts.join(' '), path);
   }
 
   private fieldValue(v: FieldValue, path: Path, scope: Record<string, Value>): string {

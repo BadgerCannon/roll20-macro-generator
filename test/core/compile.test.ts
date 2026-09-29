@@ -400,6 +400,33 @@ macros:
       expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
     });
 
+    it('stops a deep single-reference var chain before the JS stack overflows', () => {
+      const depth = 5_000; // overflows the stack without MAX_DEPTH
+      const vars = Array.from({ length: depth }, (_, i) => `  a${i}: '\${a${i + 1}}'`).join('\n');
+      const src = `vars:\n${vars}\n  a${depth}: x\nmacros:\n  m: { body: '\${a0}' }\n`;
+      const m = compile(src).macros[0]!;
+      expect(m.output).toBeUndefined();
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+      expect(m.diagnostics[0]!.message).toMatch(/nest more than/);
+    });
+
+    it('stops a large var repeated many times before building the string', () => {
+      const big = 'x'.repeat(90_000);
+      const src = `vars: { big: ${big} }\nmacros:\n  m: { body: '${'\${big}'.repeat(20_000)}' }\n`;
+      const start = Date.now();
+      const m = compile(src).macros[0]!;
+      expect(Date.now() - start).toBeLessThan(2000);
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+      expect(m.diagnostics[0]!.message).toMatch(/builds too much text/);
+    });
+
+    it('stops a loop that repeats a large literal', () => {
+      const big = 'y'.repeat(90_000);
+      const src = `macros:\n  m:\n    choose:\n      prompt: P\n      for: { n: 1..1000 }\n      value: ${big}\n`;
+      const m = compile(src).macros[0]!;
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+    });
+
     it('leaves ordinary macros alone', () => {
       expect(
         compile(`vars:\n${chain('x', 8)}\nmacros:\n  m: { body: '\${a0}' }\n`).macros[0]!.output,

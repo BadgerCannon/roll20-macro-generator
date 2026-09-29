@@ -177,10 +177,14 @@ parentheses, and `floor ceil round abs min max`. Write `$${` for a literal `${`.
 
 ### Limits
 
-To keep a shared link from freezing the page, one macro may resolve at most 200,000 `${…}`
-references and generated options, and expand to at most 100,000 characters. A `for` range may
-have at most 1,000 values. Going over any of these gives an `expansion-limit` or `choose-for`
-error.
+To keep a shared link from freezing the page, each macro has limits:
+
+- at most 200,000 `${…}` references resolved and options generated;
+- vars and named queries may refer to one another at most 50 levels deep;
+- at most 4,000,000 characters built along the way, and 100,000 characters of final output;
+- at most 1,000 values in one `for` range.
+
+Going over a limit gives an `expansion-limit` (or `choose-for`) error for that macro only.
 
 ### YAML tips
 
