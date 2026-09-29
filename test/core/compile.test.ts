@@ -247,6 +247,27 @@ macros:
     ).toBe('[[floor((@{level}+1)/6)+1]] beams, [[ [[floor((@{level}+1)/6)+1]]d10 ]]');
   });
 
+  it('resolves names inside a file var from the macro that uses it', () => {
+    const r = compile(`
+vars:
+  attr: '@{\${ability}_mod}'
+  ability: str
+macros:
+  a: { body: '\${attr}' }
+  b: { vars: { ability: cha }, body: '\${attr}' }
+  c:
+    choose:
+      prompt: P
+      layout: compact
+      options: [{ for: { ability: [dex] }, value: '\${attr}' }]
+`);
+    expect(r.macros.map((m) => m.output)).toEqual([
+      '@{str_mod}',
+      '@{cha_mod}',
+      '?{P|dex,@{dex_mod}|,}',
+    ]);
+  });
+
   it('reports variable cycles', () => {
     const r = compile("vars: { a: '${b}', b: '${a}' }\nmacros:\n  m: { body: '${a}' }\n");
     expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'var-cycle', line: 1 });

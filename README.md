@@ -103,7 +103,7 @@ A file has optional `vars` and a map of `macros`. Every string may use `${expr}`
 | `description` | Free text shown in tools. |
 | `extends` | Name of another macro to inherit from. Fields merge in order; `null` removes a field. |
 | `target` | `collection` or `ability`. Controls the entity warning above. |
-| `vars` | Values for `${name}`. Macro vars override file vars. A var may use other vars, e.g. `beams: ${cantrip_dice}`. |
+| `vars` | Values for `${name}`. Macro vars override file vars. A var may use other vars, e.g. `beams: ${cantrip_dice}`. Names inside a var are looked up where it is used: a file var that uses `${x}` sees the macro's own `x` (or a `for` loop's `x`) if there is one. |
 | `queries` | Named roll queries, used as `${name}`. A string is a free-text prompt; an object has `prompt`, `default`, `options` (list, `{label, value}` items, or a `label: value` map). |
 | `rolls` | Named inline rolls. The first `${name}` rolls `[[…]]`; later uses show `$[[n]]`. |
 | `chat` | Prefix: `roll`, `emote`, `gmroll`, `desc`, `ooc`, `{whisper: gm}`, `{as: Name}`, `{emas: Name}`, `{api: command}`. |
