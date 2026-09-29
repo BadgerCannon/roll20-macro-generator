@@ -1,0 +1,4 @@
+&{template:default} {{name=Attack}} ?{Weapon
+|Longsword,{{Hit=[[?{Roll&#124;Normal&#44;1d20&#124;Advantage&#44;2d20kh1&#124;Disadvantage&#44;2d20kl1&#125; + @{selected|strength_mod} + ?{Bonus&#124;0&#125;]]&#125;&#125; {{Damage=[[1d8 + @{selected|strength_mod}]]&#125;&#125;
+|Shortbow,{{Hit=[[?{Roll&#124;Normal&#44;1d20&#124;Advantage&#44;2d20kh1&#124;Disadvantage&#44;2d20kl1&#125; + @{selected|dexterity_mod} + ?{Bonus&#124;0&#125;]]&#125;&#125; {{Damage=[[1d6 + @{selected|dexterity_mod}]]&#125;&#125;
+}

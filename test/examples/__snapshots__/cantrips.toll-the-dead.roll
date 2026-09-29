@@ -1,0 +1,1 @@
+&{template:5eDefault} {{character_name=@{character_name}}} {{subheader=@{character_name}}} {{title=Toll the Dead}} {{subheaderright=Necromancy cantrip · 60 ft}} {{freetextname=Wisdom save DC [[@{spell_save_dc}]]}} {{freetext=On a failed save the target takes [[ [[floor((@{level}+1)/6)+1]]d?{Is the target missing any hit points?|No (d8),8|Yes (d12),12} ]] necrotic damage.}}

@@ -103,7 +103,7 @@ A file has optional `vars` and a map of `macros`. Every string may use `${expr}`
 | `description` | Free text shown in tools. |
 | `extends` | Name of another macro to inherit from. Fields merge in order; `null` removes a field. |
 | `target` | `collection` or `ability`. Controls the entity warning above. |
-| `vars` | Values for `${name}`. Macro vars override file vars. |
+| `vars` | Values for `${name}`. Macro vars override file vars. A var may use other vars, e.g. `beams: ${cantrip_dice}`. Names inside a var are looked up where it is used: a file var that uses `${x}` sees the macro's own `x` (or a `for` loop's `x`) if there is one. |
 | `queries` | Named roll queries, used as `${name}`. A string is a free-text prompt; an object has `prompt`, `default`, `options` (list, `{label, value}` items, or a `label: value` map). |
 | `rolls` | Named inline rolls. The first `${name}` rolls `[[…]]`; later uses show `$[[n]]`. |
 | `chat` | Prefix: `roll`, `emote`, `gmroll`, `desc`, `ooc`, `{whisper: gm}`, `{as: Name}`, `{emas: Name}`, `{api: command}`. |
@@ -174,6 +174,17 @@ is posted.
 
 `${…}` accepts names (vars, loop variables, named queries and rolls), numbers, `+ - * / %`,
 parentheses, and `floor ceil round abs min max`. Write `$${` for a literal `${`.
+
+### Limits
+
+To keep a shared link from freezing the page, each macro has limits:
+
+- at most 200,000 `${…}` references resolved and options generated;
+- vars and named queries may refer to one another at most 50 levels deep;
+- at most 4,000,000 characters built along the way, and 100,000 characters of final output;
+- at most 1,000 values in one `for` range.
+
+Going over a limit gives an `expansion-limit` (or `choose-for`) error for that macro only.
 
 ### YAML tips
 

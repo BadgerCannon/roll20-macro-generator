@@ -1,0 +1,1 @@
+/w gm &{template:default} {{name=Menu: @{selected|character_name}}} {{Rolls=[Initiative](~selected|INITIATIVE) [Perception](~selected|perception)}} {{Tokens=[Damage](!token-mod --set bar1|-&#63;{Damage|0}) [Show HP](!&#13;/w gm &#64;{selected|token_name}&#58; &#64;{selected|bar1}/&#64;{selected|bar1|max} HP)}}

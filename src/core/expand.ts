@@ -30,6 +30,18 @@ function own<T>(obj: Record<string, T> | undefined, key: string): T | undefined 
 /** Most options one `for` loop may generate; guards against freezing on `1..999999999`. */
 export const MAX_LOOP_VALUES = 1000;
 
+/**
+ * Per-macro limits. Vars and queries can reference each other without a cycle and still grow
+ * exponentially (`a: '${b}${b}'`, `b: '${c}${c}'`, …). Shared links compile on page load, so
+ * these keep a small crafted document from freezing the browser.
+ */
+export const MAX_WORK = 200_000; // `${…}` references resolved + options generated
+export const MAX_OUTPUT = 100_000; // characters of expanded text
+/** Characters built across all intermediate strings, checked before each piece is appended. */
+export const MAX_BUILT = 4_000_000;
+/** How deeply vars and named queries may refer to one another. */
+export const MAX_DEPTH = 50;
+
 /** Private-use characters the expander uses as markers (see r20/parse.ts). */
 const RESERVED = /[\uE000\uE001]/;
 
@@ -92,6 +104,62 @@ const SEPARATOR = '-----------------------';
 class Expander {
   private usedRolls = new Set<string>();
   private queryStack: string[] = [];
+  private varStack: string[] = [];
+  private work = 0;
+  private built = 0;
+  private depth = 0;
+
+  private limit(message: string, path: Path): never {
+    throw new ExpandError('expansion-limit', message, path);
+  }
+
+  /** Counts characters about to be appended; throws before an oversized string is built. */
+  private charge(piece: string, path: Path): string {
+    this.built += piece.length;
+    if (this.built > MAX_BUILT) {
+      this.limit(
+        `Expansion builds too much text (over ${MAX_BUILT.toLocaleString('en')} characters). Check for large vars used many times`,
+        path,
+      );
+    }
+    return piece;
+  }
+
+  /** Runs `fn` one var/query level deeper; throws past `MAX_DEPTH`. */
+  private nested<T>(path: Path, fn: () => T): T {
+    if (++this.depth > MAX_DEPTH) {
+      this.depth--;
+      this.limit(`Vars and queries nest more than ${MAX_DEPTH} levels deep`, path);
+    }
+    try {
+      return fn();
+    } finally {
+      this.depth--;
+    }
+  }
+
+  /** Counts expansion work; throws once the macro exceeds `MAX_WORK`. */
+  private spend(path: Path) {
+    if (++this.work > MAX_WORK) {
+      throw new ExpandError(
+        'expansion-limit',
+        `Expansion is too large: more than ${MAX_WORK.toLocaleString('en')} references and options. Check for vars or queries that repeat each other many times`,
+        path,
+      );
+    }
+  }
+
+  /** Throws when expanded text exceeds `MAX_OUTPUT` characters. */
+  private sized(text: string, path: Path): string {
+    if (text.length > MAX_OUTPUT) {
+      throw new ExpandError(
+        'expansion-limit',
+        `Expanded text is too large: ${text.length.toLocaleString('en')} characters (limit ${MAX_OUTPUT.toLocaleString('en')})`,
+        path,
+      );
+    }
+    return text;
+  }
   readonly diagnostics: Diagnostic[] = [];
 
   constructor(
@@ -115,7 +183,10 @@ class Expander {
       );
     }
     const resolve = (id: string): Value | undefined => {
-      const v = own(scope, id) ?? own(this.macro.vars, id) ?? own(this.doc.vars, id);
+      this.spend(path);
+      const loop = own(scope, id);
+      if (loop !== undefined) return loop;
+      const v = this.variable(id, scope);
       if (v !== undefined) return v;
       const q = own(this.macro.queries, id);
       if (q !== undefined) return this.query(id, q, scope);
@@ -124,11 +195,36 @@ class Expander {
       return undefined;
     };
     try {
-      return interpolate(text, resolve);
+      const out = interpolate(text, resolve, (v) => this.charge(String(v), path));
+      return this.sized(this.charge(out, path), path);
     } catch (e) {
       if (e instanceof ExpandError) throw e;
       if (e instanceof ExprError) throw new ExpandError(e.code, e.message, path);
       throw e;
+    }
+  }
+
+  /**
+   * File or macro variable. String values are interpolated too, so one var can build on another
+   * (`beams: ${cantrip_dice}`).
+   */
+  private variable(id: string, scope: Record<string, Value>): Value | undefined {
+    const inMacro = own(this.macro.vars, id);
+    const v = inMacro ?? own(this.doc.vars, id);
+    if (typeof v !== 'string' || !v.includes('${')) return v;
+    const path = inMacro !== undefined ? [...this.base, 'vars', id] : ['vars', id];
+    if (this.varStack.includes(id)) {
+      throw new ExpandError(
+        'var-cycle',
+        `Variable \`${id}\` refers to itself: ${[...this.varStack, id].join(' → ')}`,
+        path,
+      );
+    }
+    this.varStack.push(id);
+    try {
+      return this.nested(path, () => this.str(v, path, scope));
+    } finally {
+      this.varStack.pop();
     }
   }
 
@@ -143,6 +239,14 @@ class Expander {
     }
     this.queryStack.push(id);
     try {
+      return this.nested(path, () => this.queryText(q, path, scope));
+    } finally {
+      this.queryStack.pop();
+    }
+  }
+
+  private queryText(q: QueryDef, path: Path, scope: Record<string, Value>): string {
+    {
       if (typeof q === 'string') return `?{${this.str(q, path, scope)}}`;
       let out = '?{' + this.str(q.prompt, [...path, 'prompt'], scope);
       if (q.default !== undefined) out += '|' + this.str(q.default, [...path, 'default'], scope);
@@ -161,8 +265,6 @@ class Expander {
         }
       }
       return out + '}';
-    } finally {
-      this.queryStack.pop();
     }
   }
 
@@ -183,7 +285,7 @@ class Expander {
       if (v === null) continue;
       parts.push(`{{${this.str(k, path, scope)}=${this.fieldValue(v, [...path, k], scope)}}}`);
     }
-    return parts.join(' ');
+    return this.charge(parts.join(' '), path);
   }
 
   private fieldValue(v: FieldValue, path: Path, scope: Record<string, Value>): string {
@@ -227,9 +329,12 @@ class Expander {
 
     const prompt = this.str(c.prompt, [...path, 'prompt'], scope);
     const pretty = (c.layout ?? 'pretty') === 'pretty';
-    return pretty
-      ? `?{${prompt}${opts.map((o) => '\n|' + o).join('')}\n}`
-      : `?{${prompt}${opts.map((o) => '|' + o).join('')}}`;
+    return this.sized(
+      pretty
+        ? `?{${prompt}${opts.map((o) => '\n|' + o).join('')}\n}`
+        : `?{${prompt}${opts.map((o) => '|' + o).join('')}}`,
+      path,
+    );
   }
 
   private option(o: Option, path: Path, scope: Record<string, Value>): string[] {
@@ -237,6 +342,7 @@ class Expander {
       return [o.separator === true ? SEPARATOR : this.str(o.separator, path, scope)];
     }
     if ('for' in o) return this.loop(o, path, scope);
+    this.spend(path);
     return [this.single(o, path, scope)];
   }
 
@@ -265,6 +371,7 @@ class Expander {
         label: ov.label ?? base.label!,
         fields: mergeFields(base.fields, ov.fields),
       };
+      this.spend(path);
       return this.single(merged, path, { ...scope, [varName]: v });
     });
     const keys = values.map(String);
@@ -312,7 +419,7 @@ class Expander {
     if (m.text !== undefined) parts.push(this.str(m.text, [...b, 'text']));
     if (m.choose) parts.push(this.choose(m.choose, [...b, 'choose']));
     if (m.body !== undefined) parts.push(this.str(m.body, [...b, 'body']));
-    return chatPrefix(m.chat) + parts.join(' ');
+    return this.sized(chatPrefix(m.chat) + parts.join(' '), b);
   }
 }
 

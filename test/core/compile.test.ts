@@ -232,6 +232,48 @@ macros:
   });
 });
 
+describe('variables', () => {
+  it('interpolates vars inside vars, file and macro level', () => {
+    expect(
+      out(`
+vars:
+  level: '@{level}'
+  dice: '[[floor((\${level}+1)/6)+1]]'
+macros:
+  m:
+    vars: { beams: '\${dice}' }
+    body: '\${beams} beams, [[ \${dice}d10 ]]'
+`),
+    ).toBe('[[floor((@{level}+1)/6)+1]] beams, [[ [[floor((@{level}+1)/6)+1]]d10 ]]');
+  });
+
+  it('resolves names inside a file var from the macro that uses it', () => {
+    const r = compile(`
+vars:
+  attr: '@{\${ability}_mod}'
+  ability: str
+macros:
+  a: { body: '\${attr}' }
+  b: { vars: { ability: cha }, body: '\${attr}' }
+  c:
+    choose:
+      prompt: P
+      layout: compact
+      options: [{ for: { ability: [dex] }, value: '\${attr}' }]
+`);
+    expect(r.macros.map((m) => m.output)).toEqual([
+      '@{str_mod}',
+      '@{cha_mod}',
+      '?{P|dex,@{dex_mod}|,}',
+    ]);
+  });
+
+  it('reports variable cycles', () => {
+    const r = compile("vars: { a: '${b}', b: '${a}' }\nmacros:\n  m: { body: '${a}' }\n");
+    expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'var-cycle', line: 1 });
+  });
+});
+
 describe('compile diagnostics', () => {
   it('reports YAML syntax errors with a position', () => {
     const r = compile('macros:\n  m: [unclosed\n');
@@ -323,6 +365,73 @@ macros:
     );
     expect(r.macros[0]!.output).toBeUndefined();
     expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'choose-for' });
+  });
+
+  describe('expansion limits', () => {
+    // a0: '${a1}${a1}', a1: '${a2}${a2}', … — acyclic but 2^depth work.
+    const chain = (leaf: string, depth = 40) =>
+      Array.from({ length: depth }, (_, i) => `  a${i}: '\${a${i + 1}}\${a${i + 1}}'`).join('\n') +
+      `\n  a${depth}: '${leaf}'`;
+
+    it.each([
+      ['growing vars', `vars:\n${chain('x')}\nmacros:\n  m: { body: '\${a0}' }\n`],
+      ['empty vars', `vars:\n${chain('')}\nmacros:\n  m: { body: '\${a0}' }\n`],
+      [
+        'queries',
+        `macros:\n  m:\n    queries:\n${chain('?').replace(/^ {2}/gm, '      ')}\n    body: '\${a0}'\n`,
+      ],
+      [
+        'nested loops',
+        `macros:
+  m:
+    template: default
+    choose:
+      prompt: A
+      for: { i: 1..1000 }
+      fields:
+        x: { choose: { prompt: B, for: { j: 1..1000 }, value: v } }
+`,
+      ],
+    ])('stops %s quickly with expansion-limit', (_name, src) => {
+      const start = Date.now();
+      const m = compile(src).macros[0]!;
+      expect(Date.now() - start).toBeLessThan(2000);
+      expect(m.output).toBeUndefined();
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+    });
+
+    it('stops a deep single-reference var chain before the JS stack overflows', () => {
+      const depth = 5_000; // overflows the stack without MAX_DEPTH
+      const vars = Array.from({ length: depth }, (_, i) => `  a${i}: '\${a${i + 1}}'`).join('\n');
+      const src = `vars:\n${vars}\n  a${depth}: x\nmacros:\n  m: { body: '\${a0}' }\n`;
+      const m = compile(src).macros[0]!;
+      expect(m.output).toBeUndefined();
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+      expect(m.diagnostics[0]!.message).toMatch(/nest more than/);
+    });
+
+    it('stops a large var repeated many times before building the string', () => {
+      const big = 'x'.repeat(90_000);
+      const src = `vars: { big: ${big} }\nmacros:\n  m: { body: '${'${big}'.repeat(20_000)}' }\n`;
+      const start = Date.now();
+      const m = compile(src).macros[0]!;
+      expect(Date.now() - start).toBeLessThan(2000);
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+      expect(m.diagnostics[0]!.message).toMatch(/builds too much text/);
+    });
+
+    it('stops a loop that repeats a large literal', () => {
+      const big = 'y'.repeat(90_000);
+      const src = `macros:\n  m:\n    choose:\n      prompt: P\n      for: { n: 1..1000 }\n      value: ${big}\n`;
+      const m = compile(src).macros[0]!;
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+    });
+
+    it('leaves ordinary macros alone', () => {
+      expect(
+        compile(`vars:\n${chain('x', 8)}\nmacros:\n  m: { body: '\${a0}' }\n`).macros[0]!.output,
+      ).toBe('x'.repeat(256));
+    });
   });
 
   it('rejects the private-use marker characters', () => {

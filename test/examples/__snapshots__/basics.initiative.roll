@@ -1,0 +1,1 @@
+&{template:default} {{name=@{selected|token_name} Initiative}} {{Roll=[[1d20 + @{selected|initiative_bonus} &{tracker}]]}}
