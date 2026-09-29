@@ -412,7 +412,7 @@ macros:
 
     it('stops a large var repeated many times before building the string', () => {
       const big = 'x'.repeat(90_000);
-      const src = `vars: { big: ${big} }\nmacros:\n  m: { body: '${'\${big}'.repeat(20_000)}' }\n`;
+      const src = `vars: { big: ${big} }\nmacros:\n  m: { body: '${'${big}'.repeat(20_000)}' }\n`;
       const start = Date.now();
       const m = compile(src).macros[0]!;
       expect(Date.now() - start).toBeLessThan(2000);
