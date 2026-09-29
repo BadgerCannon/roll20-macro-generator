@@ -30,6 +30,14 @@ function own<T>(obj: Record<string, T> | undefined, key: string): T | undefined 
 /** Most options one `for` loop may generate; guards against freezing on `1..999999999`. */
 export const MAX_LOOP_VALUES = 1000;
 
+/**
+ * Per-macro limits. Vars and queries can reference each other without a cycle and still grow
+ * exponentially (`a: '${b}${b}'`, `b: '${c}${c}'`, …). Shared links compile on page load, so
+ * these keep a small crafted document from freezing the browser.
+ */
+export const MAX_WORK = 200_000; // `${…}` references resolved + options generated
+export const MAX_OUTPUT = 100_000; // characters of expanded text
+
 /** Private-use characters the expander uses as markers (see r20/parse.ts). */
 const RESERVED = /[\uE000\uE001]/;
 
@@ -93,6 +101,30 @@ class Expander {
   private usedRolls = new Set<string>();
   private queryStack: string[] = [];
   private varStack: string[] = [];
+  private work = 0;
+
+  /** Counts expansion work; throws once the macro exceeds `MAX_WORK`. */
+  private spend(path: Path) {
+    if (++this.work > MAX_WORK) {
+      throw new ExpandError(
+        'expansion-limit',
+        `Expansion is too large: more than ${MAX_WORK.toLocaleString('en')} references and options. Check for vars or queries that repeat each other many times`,
+        path,
+      );
+    }
+  }
+
+  /** Throws when expanded text exceeds `MAX_OUTPUT` characters. */
+  private sized(text: string, path: Path): string {
+    if (text.length > MAX_OUTPUT) {
+      throw new ExpandError(
+        'expansion-limit',
+        `Expanded text is too large: ${text.length.toLocaleString('en')} characters (limit ${MAX_OUTPUT.toLocaleString('en')})`,
+        path,
+      );
+    }
+    return text;
+  }
   readonly diagnostics: Diagnostic[] = [];
 
   constructor(
@@ -116,6 +148,7 @@ class Expander {
       );
     }
     const resolve = (id: string): Value | undefined => {
+      this.spend(path);
       const loop = own(scope, id);
       if (loop !== undefined) return loop;
       const v = this.variable(id, scope);
@@ -127,7 +160,7 @@ class Expander {
       return undefined;
     };
     try {
-      return interpolate(text, resolve);
+      return this.sized(interpolate(text, resolve), path);
     } catch (e) {
       if (e instanceof ExpandError) throw e;
       if (e instanceof ExprError) throw new ExpandError(e.code, e.message, path);
@@ -254,9 +287,12 @@ class Expander {
 
     const prompt = this.str(c.prompt, [...path, 'prompt'], scope);
     const pretty = (c.layout ?? 'pretty') === 'pretty';
-    return pretty
-      ? `?{${prompt}${opts.map((o) => '\n|' + o).join('')}\n}`
-      : `?{${prompt}${opts.map((o) => '|' + o).join('')}}`;
+    return this.sized(
+      pretty
+        ? `?{${prompt}${opts.map((o) => '\n|' + o).join('')}\n}`
+        : `?{${prompt}${opts.map((o) => '|' + o).join('')}}`,
+      path,
+    );
   }
 
   private option(o: Option, path: Path, scope: Record<string, Value>): string[] {
@@ -264,6 +300,7 @@ class Expander {
       return [o.separator === true ? SEPARATOR : this.str(o.separator, path, scope)];
     }
     if ('for' in o) return this.loop(o, path, scope);
+    this.spend(path);
     return [this.single(o, path, scope)];
   }
 
@@ -292,6 +329,7 @@ class Expander {
         label: ov.label ?? base.label!,
         fields: mergeFields(base.fields, ov.fields),
       };
+      this.spend(path);
       return this.single(merged, path, { ...scope, [varName]: v });
     });
     const keys = values.map(String);
@@ -339,7 +377,7 @@ class Expander {
     if (m.text !== undefined) parts.push(this.str(m.text, [...b, 'text']));
     if (m.choose) parts.push(this.choose(m.choose, [...b, 'choose']));
     if (m.body !== undefined) parts.push(this.str(m.body, [...b, 'body']));
-    return chatPrefix(m.chat) + parts.join(' ');
+    return this.sized(chatPrefix(m.chat) + parts.join(' '), b);
   }
 }
 

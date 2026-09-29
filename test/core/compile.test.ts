@@ -367,6 +367,46 @@ macros:
     expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'choose-for' });
   });
 
+  describe('expansion limits', () => {
+    // a0: '${a1}${a1}', a1: '${a2}${a2}', … — acyclic but 2^depth work.
+    const chain = (leaf: string, depth = 40) =>
+      Array.from({ length: depth }, (_, i) => `  a${i}: '\${a${i + 1}}\${a${i + 1}}'`).join('\n') +
+      `\n  a${depth}: '${leaf}'`;
+
+    it.each([
+      ['growing vars', `vars:\n${chain('x')}\nmacros:\n  m: { body: '\${a0}' }\n`],
+      ['empty vars', `vars:\n${chain('')}\nmacros:\n  m: { body: '\${a0}' }\n`],
+      [
+        'queries',
+        `macros:\n  m:\n    queries:\n${chain('?').replace(/^ {2}/gm, '      ')}\n    body: '\${a0}'\n`,
+      ],
+      [
+        'nested loops',
+        `macros:
+  m:
+    template: default
+    choose:
+      prompt: A
+      for: { i: 1..1000 }
+      fields:
+        x: { choose: { prompt: B, for: { j: 1..1000 }, value: v } }
+`,
+      ],
+    ])('stops %s quickly with expansion-limit', (_name, src) => {
+      const start = Date.now();
+      const m = compile(src).macros[0]!;
+      expect(Date.now() - start).toBeLessThan(2000);
+      expect(m.output).toBeUndefined();
+      expect(m.diagnostics[0]).toMatchObject({ code: 'expansion-limit' });
+    });
+
+    it('leaves ordinary macros alone', () => {
+      expect(
+        compile(`vars:\n${chain('x', 8)}\nmacros:\n  m: { body: '\${a0}' }\n`).macros[0]!.output,
+      ).toBe('x'.repeat(256));
+    });
+  });
+
   it('rejects the private-use marker characters', () => {
     const r = compile('macros:\n  m:\n    body: "a \\uE000 b"\n');
     expect(r.macros[0]!.diagnostics[0]).toMatchObject({ code: 'reserved-char' });

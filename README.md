@@ -175,6 +175,13 @@ is posted.
 `${…}` accepts names (vars, loop variables, named queries and rolls), numbers, `+ - * / %`,
 parentheses, and `floor ceil round abs min max`. Write `$${` for a literal `${`.
 
+### Limits
+
+To keep a shared link from freezing the page, one macro may resolve at most 200,000 `${…}`
+references and generated options, and expand to at most 100,000 characters. A `for` range may
+have at most 1,000 values. Going over any of these gives an `expansion-limit` or `choose-for`
+error.
+
 ### YAML tips
 
 - Quote values that start with `@`, `&`, `[`, `{`, `?`, `!`, `%` or `*`.

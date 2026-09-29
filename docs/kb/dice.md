@@ -6,7 +6,7 @@ Pathfinder Examples; rmacro grammar.
 | Syntax | Meaning |
 | --- | --- |
 | `NdX`, `dX`, `dF` | Roll N X-sided dice; Fate dice |
-| `cs>N`, `cs<N`, `cs=N`, `cf<N`, `cf>N` | Critical success / failure highlight thresholds. `cs>N` is inclusive (sourced): `1d20cs>19` highlights 19 or 20, `1d20cs>20` only a natural 20 (5e). The other `<`/`>` forms are assumed inclusive by symmetry (see Crit ranges). `1d100cs0cf0` turns highlights off |
+| `cs>N`, `cs<N`, `cs=N`, `cf<N`, `cf>N` | Critical success / failure highlight thresholds. `cs>N` and `cf<N` are inclusive (sourced): `1d20cs>19` highlights 19 or 20, `1d20cs>20` only a natural 20 (5e), `1d20cf<3` fumbles on 1–3. `cs<N` and `cf>N` are assumed inclusive by symmetry (see Crit ranges). `1d100cs0cf0` turns highlights off |
 | `khN`, `klN`, `dhN`, `dlN` | Keep / drop highest / lowest |
 | `!`, `!!`, `!p` | Exploding, compounding, penetrating |
 | `rN`, `roN` | Reroll (once) |
@@ -52,5 +52,9 @@ Source: Pathfinder Examples → _Calculating Crits_: "`1d20cs>19` will display t
 green critical highlight on a 19 or 20. `1d20cs>15`, on a 15-20". So `cs>N` includes `N`.
 For D&D 5e (crit only on a natural 20) use `1d20cs>20`, as in the handcrafted Guiding Bolt.
 
-The sources quote no example for `cs<N`, `cf<N` or `cf>N`. These notes assume all four `<`/`>`
-forms include `N`, by symmetry with `cs>N`; confirm in Roll20 before relying on an edge value.
+Source: Roll20 Dice Reference (<https://wiki.roll20.net/Dice_Reference>, also the Help Center
+article of the same name): `/roll 1d20cf<3` shows "any roll equal to or less than 3" as a
+critical failure. So `cf<N` includes `N` too.
+
+The sources quote no example for `cs<N` or `cf>N`. These notes assume they also include `N`, by
+symmetry with the two documented forms; confirm in Roll20 before relying on an edge value.
