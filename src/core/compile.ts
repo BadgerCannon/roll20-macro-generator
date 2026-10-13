@@ -50,6 +50,22 @@ export function compile(source: string): CompileResult {
       ];
       return { name, description, output: rendered.text, diagnostics };
     } catch (e) {
+      // RangeError (stack overflow, oversized string) is a backstop: the expander's own limits
+      // should fire first, but one bad macro must never take down the whole compile.
+      if (e instanceof RangeError) {
+        return {
+          name,
+          description,
+          output: undefined,
+          diagnostics: [
+            at({
+              severity: 'error',
+              code: 'expansion-limit',
+              message: `Macro is too large or too deeply nested to expand (${e.message})`,
+            }),
+          ],
+        };
+      }
       if (!(e instanceof ExpandError)) throw e;
       return {
         name,
